@@ -8,9 +8,18 @@ export function useUserProfile() {
     queryKey: ["userProfile"],
     queryFn: async () => {
       if (!actor) return null;
-      return actor.getCallerUserProfile();
+      // Timeout so the app never hangs indefinitely
+      const timeout = new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), 8000),
+      );
+      return Promise.race([
+        actor.getCallerUserProfile().catch(() => null),
+        timeout,
+      ]);
     },
     enabled: !!actor && !isFetching,
+    retry: 1,
+    retryDelay: 1000,
   });
 }
 
@@ -20,7 +29,7 @@ export function useAllDishes() {
     queryKey: ["allDishes"],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getAllDishes();
+      return actor.getAllDishes().catch(() => []);
     },
     enabled: !!actor && !isFetching,
   });
@@ -32,7 +41,7 @@ export function useRecommendations(timeOfDay: string, weather: string) {
     queryKey: ["recommendations", timeOfDay, weather],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getRecommendations(timeOfDay, weather);
+      return actor.getRecommendations(timeOfDay, weather).catch(() => []);
     },
     enabled: !!actor && !isFetching,
   });
@@ -52,7 +61,13 @@ export function useTasteVector() {
           cuisineAffinities: [],
         };
       }
-      return actor.getTasteVector();
+      return actor.getTasteVector().catch(() => ({
+        spice: 0.5,
+        sweetness: 0.4,
+        richness: 0.6,
+        vegetarian: 0.3,
+        cuisineAffinities: [],
+      }));
     },
     enabled: !!actor && !isFetching,
   });
@@ -73,7 +88,11 @@ export function useAnalytics() {
           learningProgress: 0,
           totalInteractions: BigInt(0),
         };
-      return actor.getAnalytics();
+      return actor.getAnalytics().catch(() => ({
+        topCuisine: "North Indian",
+        learningProgress: 0,
+        totalInteractions: BigInt(0),
+      }));
     },
     enabled: !!actor && !isFetching,
   });

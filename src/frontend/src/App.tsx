@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -8,23 +8,39 @@ import {
   LayoutGrid,
   Sparkles,
   User,
+  Wand2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AnalyticsTab from "./components/AnalyticsTab";
 import ExploreTab from "./components/ExploreTab";
 import FeedTab from "./components/FeedTab";
 import OnboardingWizard from "./components/OnboardingWizard";
 import TasteProfileTab from "./components/TasteProfileTab";
+import { useActor } from "./hooks/useActor";
 import { useUserProfile } from "./hooks/useQueries";
 
 export default function App() {
-  const { data: profile, isLoading } = useUserProfile();
+  const { isFetching: actorLoading } = useActor();
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    isError,
+  } = useUserProfile();
   const [onboardingDone, setOnboardingDone] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  // Safety net: never show loading screen longer than 10 seconds
+  const [timedOut, setTimedOut] = useState(false);
 
+  const isLoading = (actorLoading || profileLoading) && !timedOut && !isError;
   const hasProfile = !!profile || onboardingDone;
 
-  // Loading state
+  useEffect(() => {
+    if (!isLoading) return;
+    const t = setTimeout(() => setTimedOut(true), 10000);
+    return () => clearTimeout(t);
+  }, [isLoading]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen mesh-bg flex items-center justify-center">
@@ -51,7 +67,6 @@ export default function App() {
     );
   }
 
-  // Onboarding
   if (!hasProfile) {
     return <OnboardingWizard onComplete={() => setOnboardingDone(true)} />;
   }
@@ -67,7 +82,25 @@ export default function App() {
         }}
       />
 
-      {/* Header */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <motion.div
+            className="fixed inset-0 z-[100]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <OnboardingWizard
+              onComplete={() => {
+                setShowOnboarding(false);
+                setOnboardingDone(true);
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <header className="sticky top-0 z-50 glass-card border-b border-border/60 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -86,22 +119,32 @@ export default function App() {
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
-            <span className="text-xs text-muted-foreground hidden sm:block">
-              Hi,{" "}
-              <span className="text-foreground font-medium">
-                {profile?.name ?? "Foodie"}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
+              <span className="text-xs text-muted-foreground hidden sm:block">
+                Hi,{" "}
+                <span className="text-foreground font-medium">
+                  {profile?.name ?? "Foodie"}
+                </span>
               </span>
-            </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              data-ocid="header.retake_quiz_button"
+              onClick={() => setShowOnboarding(true)}
+              className="h-7 px-2.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 gap-1.5"
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Retake Quiz</span>
+            </Button>
           </div>
         </div>
       </header>
 
-      {/* Main */}
       <main className="max-w-7xl mx-auto">
         <Tabs defaultValue="feed" className="w-full">
-          {/* Tab nav */}
           <div className="sticky top-14 z-40 glass-card border-b border-border/40 backdrop-blur-xl">
             <div className="max-w-7xl mx-auto px-4 md:px-6">
               <TabsList className="h-auto bg-transparent gap-0 p-0 rounded-none">
@@ -144,7 +187,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Tab content */}
           <AnimatePresence mode="wait">
             <TabsContent
               value="feed"
@@ -202,7 +244,6 @@ export default function App() {
         </Tabs>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-border/30 mt-8 py-6 px-4 text-center">
         <p className="text-xs text-muted-foreground">
           © {new Date().getFullYear()}. Built with ❤️ using{" "}
