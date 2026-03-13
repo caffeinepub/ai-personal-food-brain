@@ -28,6 +28,21 @@ function getTimeOfDay(): string {
   return "Night";
 }
 
+function getDietLabel(pref: string | null): { emoji: string; label: string } {
+  if (pref === "veg") return { emoji: "🌿", label: "Vegetarian" };
+  if (pref === "vegan") return { emoji: "🥦", label: "Vegan" };
+  if (pref === "non-veg") return { emoji: "🍖", label: "Non-Veg" };
+  return { emoji: "🍽️", label: "All Types" };
+}
+
+function getMealTimeLabel(mt: string | null): { emoji: string; label: string } {
+  if (mt === "breakfast") return { emoji: "🌅", label: "Breakfast" };
+  if (mt === "lunch") return { emoji: "☀️", label: "Lunch" };
+  if (mt === "dinner") return { emoji: "🌙", label: "Dinner" };
+  if (mt === "evening_snacks") return { emoji: "🫖", label: "Evening Snacks" };
+  return { emoji: "🕐", label: "Any Time" };
+}
+
 const WEATHERS = [
   { id: "Sunny", icon: <Sun className="w-3.5 h-3.5" />, label: "Sunny" },
   { id: "Rainy", icon: <CloudRain className="w-3.5 h-3.5" />, label: "Rainy" },
@@ -41,11 +56,24 @@ const PLATFORMS = [
   { id: "zomato", label: "🍽️ Zomato", color: "#E23744" },
 ];
 
+const MEAL_TIME_OPTIONS = [
+  { id: "breakfast", emoji: "🌅", label: "Breakfast" },
+  { id: "lunch", emoji: "☀️", label: "Lunch" },
+  { id: "dinner", emoji: "🌙", label: "Dinner" },
+  { id: "evening_snacks", emoji: "🫖", label: "Snacks" },
+];
+
 export default function FeedTab() {
   const timeOfDay = getTimeOfDay();
   const [weather, setWeather] = useState("Sunny");
   const [platformFilter, setPlatformFilter] = useState("all");
+  const [mealTimeFilter, setMealTimeFilter] = useState<string>(
+    () => localStorage.getItem("mealTime") ?? "lunch",
+  );
   const [orderDish, setOrderDish] = useState<Dish | null>(null);
+  const dietaryPref = localStorage.getItem("dietaryPref");
+  const dietInfo = getDietLabel(dietaryPref);
+  const mealInfo = getMealTimeLabel(mealTimeFilter);
 
   const {
     data: dishes,
@@ -69,8 +97,17 @@ export default function FeedTab() {
   };
 
   const filteredDishes = (dishes ?? []).filter((d) => {
-    if (platformFilter === "all") return true;
-    return d.platform === platformFilter || d.platform === "both";
+    // Apply dietary preference filter
+    if (dietaryPref === "veg" && d.dietType !== "veg") return false;
+    if (dietaryPref === "vegan" && d.dietType !== "vegan") return false;
+    // Platform filter
+    if (
+      platformFilter !== "all" &&
+      d.platform !== platformFilter &&
+      d.platform !== "both"
+    )
+      return false;
+    return true;
   });
 
   return (
@@ -82,6 +119,23 @@ export default function FeedTab() {
               <span className="text-xs text-muted-foreground">Time</span>
               <span className="text-sm font-semibold bg-primary/15 text-primary px-3 py-1 rounded-full">
                 {timeOfDay}
+              </span>
+            </div>
+            {/* Dietary preference badge */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">Diet</span>
+              <span
+                className={`text-sm font-semibold px-3 py-1 rounded-full ${
+                  dietaryPref === "veg"
+                    ? "bg-green-500/15 text-green-400"
+                    : dietaryPref === "vegan"
+                      ? "bg-emerald-500/15 text-emerald-400"
+                      : dietaryPref === "non-veg"
+                        ? "bg-orange-500/15 text-orange-400"
+                        : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {dietInfo.emoji} {dietInfo.label}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -116,8 +170,34 @@ export default function FeedTab() {
           </Button>
         </div>
 
-        {/* Platform Filter */}
+        {/* Meal Time Filter */}
         <div className="mt-3 flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Meal</span>
+          <div className="flex gap-1.5" data-ocid="feed.tab">
+            {MEAL_TIME_OPTIONS.map((mt) => (
+              <button
+                type="button"
+                key={mt.id}
+                data-ocid="feed.tab"
+                onClick={() => {
+                  setMealTimeFilter(mt.id);
+                  localStorage.setItem("mealTime", mt.id);
+                }}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
+                  mealTimeFilter === mt.id
+                    ? "bg-primary/20 text-primary border-primary/40"
+                    : "text-muted-foreground border-border hover:border-border/80 hover:text-foreground bg-transparent"
+                }`}
+              >
+                <span>{mt.emoji}</span>
+                <span className="hidden sm:inline">{mt.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Platform Filter */}
+        <div className="mt-2 flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Platform</span>
           <div className="flex gap-1.5">
             {PLATFORMS.map((p) => (
@@ -150,7 +230,13 @@ export default function FeedTab() {
           Recommended for You
         </h2>
         <p className="text-muted-foreground text-sm mt-0.5">
-          AI-curated picks for {timeOfDay.toLowerCase()} · {weather} weather
+          {mealInfo.emoji} {mealInfo.label} picks · {timeOfDay.toLowerCase()} ·{" "}
+          {weather} weather
+          {dietaryPref && dietaryPref !== "any" && (
+            <span className="ml-1">
+              · {dietInfo.emoji} {dietInfo.label} only
+            </span>
+          )}
         </p>
       </div>
 

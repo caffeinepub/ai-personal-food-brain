@@ -129,7 +129,12 @@ actor {
   };
 
   func ensureUserRegistered(caller : Principal) {
-    AccessControl.ensureRegistered(accessControlState, caller);
+    if (not caller.isAnonymous()) {
+      switch (accessControlState.userRoles.get(caller)) {
+        case (null) { accessControlState.userRoles.add(caller, #user) };
+        case (?_) {};
+      };
+    };
   };
 
   // ---- User Profile APIs ----

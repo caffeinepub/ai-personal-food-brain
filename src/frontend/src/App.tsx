@@ -29,7 +29,9 @@ export default function App() {
     isLoading: profileLoading,
     isError,
   } = useUserProfile();
-  const [onboardingDone, setOnboardingDone] = useState(false);
+  const [onboardingDone, setOnboardingDone] = useState(
+    () => localStorage.getItem("onboardingComplete") === "true",
+  );
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
 
@@ -69,7 +71,14 @@ export default function App() {
   }
 
   if (!hasProfile) {
-    return <OnboardingWizard onComplete={() => setOnboardingDone(true)} />;
+    return (
+      <OnboardingWizard
+        onComplete={() => {
+          localStorage.setItem("onboardingComplete", "true");
+          setOnboardingDone(true);
+        }}
+      />
+    );
   }
 
   return (
@@ -94,6 +103,7 @@ export default function App() {
           >
             <OnboardingWizard
               onComplete={() => {
+                localStorage.setItem("onboardingComplete", "true");
                 setShowOnboarding(false);
                 setOnboardingDone(true);
               }}
@@ -134,7 +144,10 @@ export default function App() {
               variant="ghost"
               size="sm"
               data-ocid="header.retake_quiz_button"
-              onClick={() => setShowOnboarding(true)}
+              onClick={() => {
+                localStorage.removeItem("onboardingComplete");
+                setShowOnboarding(true);
+              }}
               className="h-7 px-2.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 gap-1.5"
             >
               <Wand2 className="w-3.5 h-3.5" />

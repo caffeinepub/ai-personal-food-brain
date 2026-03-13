@@ -19,10 +19,17 @@ const CUISINES = [
 const DIETS = ["All", "veg", "non-veg", "vegan"];
 const SPICE_LEVELS = ["All", "Mild", "Medium", "Hot"];
 
+function getDefaultDiet(): string {
+  const pref = localStorage.getItem("dietaryPref") ?? "any";
+  if (pref === "veg") return "veg";
+  if (pref === "vegan") return "vegan";
+  return "All";
+}
+
 export default function ExploreTab() {
   const [search, setSearch] = useState("");
   const [cuisine, setCuisine] = useState("All");
-  const [diet, setDiet] = useState("All");
+  const [diet, setDiet] = useState(getDefaultDiet);
   const [spiceLevel, setSpiceLevel] = useState("All");
   const { data: dishes, isLoading } = useAllDishes();
   const recordFeedback = useRecordFeedback();
