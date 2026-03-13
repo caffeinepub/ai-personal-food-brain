@@ -7,6 +7,7 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export type Time = bigint;
 export interface TasteVector {
     sweetness: number;
     richness: number;
@@ -14,7 +15,19 @@ export interface TasteVector {
     spice: number;
     vegetarian: number;
 }
-export type Time = bigint;
+export interface DeliveryOrder {
+    id: string;
+    status: string;
+    deliveryAddress: string;
+    platform: string;
+    dishName: string;
+    restaurantName: string;
+    placedAt: Time;
+    cuisine: string;
+    dishId: string;
+    price: number;
+    estimatedMinutes: bigint;
+}
 export interface CuisineAffinity {
     score: number;
     cuisine: string;
@@ -24,6 +37,7 @@ export interface Dish {
     sweetness: number;
     richness: number;
     name: string;
+    platform: string;
     restaurantId: string;
     spice: number;
     cuisine: string;
@@ -52,10 +66,25 @@ export interface backendInterface {
     }>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getMyOrders(): Promise<Array<DeliveryOrder>>;
+    getOrderTasteHistory(): Promise<{
+        topCuisine: string;
+        totalOrders: bigint;
+        avgSpice: number;
+        cuisineBreakdown: Array<{
+            count: bigint;
+            cuisine: string;
+        }>;
+        avgRichness: number;
+        recentPlatforms: Array<string>;
+    }>;
+    getPlatformDishes(platform: string): Promise<Array<Dish>>;
     getRecommendations(_timeOfDay: string, _weather: string): Promise<Array<Dish>>;
     getTasteVector(): Promise<TasteVector>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
+    placeOrder(dishId: string, platform: string, deliveryAddress: string): Promise<string>;
     recordFeedback(dishId: string, action: string, rating: number): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    updateOrderStatus(orderId: string, newStatus: string): Promise<void>;
 }

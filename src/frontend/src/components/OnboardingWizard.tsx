@@ -36,7 +36,11 @@ export default function OnboardingWizard({
   };
 
   const handleFinish = async () => {
-    await createProfile.mutateAsync({ username: name, spice, sweet, rich });
+    try {
+      await createProfile.mutateAsync({ username: name, spice, sweet, rich });
+    } catch (_) {
+      // proceed even if backend call fails
+    }
     onComplete();
   };
 

@@ -8,7 +8,7 @@ interface DishCardProps {
   index: number;
   onLove?: () => void;
   onDislike?: () => void;
-  onOrder?: () => void;
+  onOrder?: (dish: Dish) => void;
   dataOcid?: string;
 }
 
@@ -43,6 +43,31 @@ function SpiceIndicator({ level }: { level: number }) {
           🌶
         </span>
       ))}
+    </div>
+  );
+}
+
+function PlatformBadges({ platform }: { platform: string }) {
+  const hasSwiggy = platform === "swiggy" || platform === "both";
+  const hasZomato = platform === "zomato" || platform === "both";
+  return (
+    <div className="flex items-center gap-1">
+      {hasSwiggy && (
+        <span
+          className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white"
+          style={{ background: "#FC8019" }}
+        >
+          S
+        </span>
+      )}
+      {hasZomato && (
+        <span
+          className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white"
+          style={{ background: "#E23744" }}
+        >
+          Z
+        </span>
+      )}
     </div>
   );
 }
@@ -121,6 +146,7 @@ export default function DishCard({
           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground border border-border">
             ~{deliveryTime} min
           </span>
+          {dish.platform && <PlatformBadges platform={dish.platform} />}
         </div>
 
         <div className="flex items-center gap-2 mb-4">
@@ -149,7 +175,7 @@ export default function DishCard({
           <Button
             variant="ghost"
             size="sm"
-            onClick={onOrder}
+            onClick={() => onOrder?.(dish)}
             className="flex-1 h-8 text-xs gap-1 text-primary hover:bg-primary/10 border border-primary/30 hover:border-primary/50"
           >
             <ShoppingCart className="w-3 h-3" />

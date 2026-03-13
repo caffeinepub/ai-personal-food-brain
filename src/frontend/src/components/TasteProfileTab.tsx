@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
-import { Save, Star, TrendingUp, Zap } from "lucide-react";
+import { Package, Save, Star, TrendingUp, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import {
@@ -22,6 +23,7 @@ import { toast } from "sonner";
 import {
   useAnalytics,
   useCreateOrUpdateProfile,
+  useOrderTasteHistory,
   useTasteVector,
   useUserProfile,
 } from "../hooks/useQueries";
@@ -30,6 +32,7 @@ export default function TasteProfileTab() {
   const { data: tasteVector, isLoading: tvLoading } = useTasteVector();
   const { data: profile } = useUserProfile();
   const { data: analytics } = useAnalytics();
+  const { data: orderHistory } = useOrderTasteHistory();
   const createProfile = useCreateOrUpdateProfile();
 
   const [spice, setSpice] = useState<number | null>(null);
@@ -89,6 +92,8 @@ export default function TasteProfileTab() {
       </div>
     );
   }
+
+  const totalOrders = Number(orderHistory?.totalOrders ?? 0);
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -371,6 +376,114 @@ export default function TasteProfileTab() {
           <Save className="w-4 h-4" />
           {createProfile.isPending ? "Saving..." : "Save Preferences"}
         </Button>
+      </motion.div>
+
+      {/* Order History Insights */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+        className="glass-card rounded-2xl p-6 space-y-5"
+      >
+        <div className="flex items-center gap-2">
+          <Package className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-foreground">
+            Order History Insights
+          </h3>
+        </div>
+
+        {totalOrders === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No order history yet. Place your first order from the Feed tab to
+            start building taste insights.
+          </p>
+        ) : (
+          <>
+            {/* Stats row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="glass-card rounded-xl p-3 bg-primary/5">
+                <p className="text-xs text-muted-foreground">Total Orders</p>
+                <p className="font-display text-2xl font-bold text-foreground mt-0.5">
+                  {totalOrders}
+                </p>
+              </div>
+              <div className="glass-card rounded-xl p-3 bg-primary/5">
+                <p className="text-xs text-muted-foreground">Top Cuisine</p>
+                <p className="font-display text-lg font-bold text-foreground mt-0.5 truncate">
+                  {orderHistory?.topCuisine || "—"}
+                </p>
+              </div>
+              <div className="glass-card rounded-xl p-3 bg-primary/5">
+                <p className="text-xs text-muted-foreground mb-1.5">
+                  Avg Spice
+                </p>
+                <Progress
+                  value={(orderHistory?.avgSpice ?? 0) * 100}
+                  className="h-2"
+                />
+                <p className="text-xs text-primary font-semibold mt-1">
+                  {Math.round((orderHistory?.avgSpice ?? 0) * 100)}%
+                </p>
+              </div>
+              <div className="glass-card rounded-xl p-3 bg-primary/5">
+                <p className="text-xs text-muted-foreground mb-1.5">
+                  Avg Richness
+                </p>
+                <Progress
+                  value={(orderHistory?.avgRichness ?? 0) * 100}
+                  className="h-2"
+                />
+                <p className="text-xs text-primary font-semibold mt-1">
+                  {Math.round((orderHistory?.avgRichness ?? 0) * 100)}%
+                </p>
+              </div>
+            </div>
+
+            {/* Cuisine breakdown */}
+            {orderHistory?.cuisineBreakdown &&
+              orderHistory.cuisineBreakdown.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2 font-medium">
+                    Cuisine Breakdown
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {orderHistory.cuisineBreakdown.map((item) => (
+                      <span
+                        key={item.cuisine}
+                        className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/25 font-medium"
+                      >
+                        {item.cuisine}{" "}
+                        <span className="opacity-70">
+                          ×{Number(item.count)}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {/* Platform breakdown */}
+            {orderHistory?.recentPlatforms &&
+              orderHistory.recentPlatforms.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Recently ordered via:
+                  </p>
+                  {orderHistory.recentPlatforms.map((p) => (
+                    <span
+                      key={p}
+                      className="text-xs font-bold px-2.5 py-0.5 rounded-full text-white"
+                      style={{
+                        background: p === "swiggy" ? "#FC8019" : "#E23744",
+                      }}
+                    >
+                      {p === "swiggy" ? "🛵 Swiggy" : "🍽️ Zomato"}
+                    </span>
+                  ))}
+                </div>
+              )}
+          </>
+        )}
       </motion.div>
 
       <div className="glass-card rounded-xl p-4 border-primary/20 bg-primary/5">

@@ -1,45 +1,46 @@
 # AI Personal Food Brain
 
 ## Current State
-New project. No existing backend or frontend.
+- Backend in Motoko with UserProfile, TasteVector, Dish, and FeedbackRecord types
+- Backend APIs: `createOrUpdateProfile`, `getCallerUserProfile`, `getAllDishes`, `getRecommendations`, `recordFeedback`, `getTasteVector`, `getAnalytics`
+- Frontend: Onboarding wizard, Feed tab (recommendations), Explore tab, Taste Profile tab, Analytics tab
+- Role-based access control via `authorization` component: principals must be registered as `#user` to call protected APIs
+- **Bug**: New users are NOT auto-registered with `#user` role, so all protected calls trap, `.catch()` returns `[]`, Feed shows "warming up" empty state indefinitely
+- No delivery platform integration or order tracking exists
 
 ## Requested Changes (Diff)
 
 ### Add
-- Full AI Taste Engine with user taste vector system
-- Dish catalog with taste vectors (cuisine, spice, sweetness, richness, texture, ingredients, calories, diet, price, popularity)
-- User profile management: diet type, allergies, cuisine preferences, spice tolerance, budget range
-- Hybrid recommendation engine (collaborative filtering + content-based + context-aware + RL feedback loop)
-- Behavioral signal tracking: clicks, views, orders, ratings, swipes (love/dislike), repeat orders
-- Context signals: time of day, day of week, weather, location
-- Recommendation output: ranked dishes with taste_match_score, price_match_score, delivery_time
-- Learning loop: update taste vector on each interaction, simulate continuous model retraining
-- Dashboard: personalized feed, taste profile visualization, recommendation history
-- Explore page: browse dishes, apply filters, rate/swipe dishes
-- Taste Profile page: view and edit taste vector, cuisine affinities, preference sliders
-- Analytics page: recommendation accuracy metrics, learning progress, model evaluation stats
+- **Auto-registration fix**: Backend functions auto-assign `#user` role to unregistered non-anonymous callers so they can immediately use the app
+- **DeliveryOrder type**: `{ id, userId, dishId, dishName, platform ("swiggy"|"zomato"), status ("placed"|"preparing"|"out_for_delivery"|"delivered"), deliveryAddress, estimatedMinutes, price, placedAt, updatedAt }`
+- **`placeOrder(dishId, platform, deliveryAddress)` API**: Creates order record, records feedback ("order"), returns order ID
+- **`getMyOrders()` API**: Returns all orders for the caller, sorted by newest first
+- **`updateOrderStatus(orderId, newStatus)` API**: Admin or simulated background update for order lifecycle
+- **`getPlatformDishes(platform)` API**: Returns simulated dishes available from the selected platform (Swiggy vs Zomato brand names, slightly different menus)
+- **`getOrderTasteHistory()` API**: Returns aggregated taste stats from past orders (cuisine breakdown, avg spice/richness)
+- **Orders tab** in frontend: Shows live order tracking with status timeline, order cards, platform badges
+- **Platform selector** on dish cards in Feed and Explore: "Order via Swiggy" and "Order via Zomato" buttons with platform branding colors
+- **Order modal/sheet**: Address input, platform choice, estimated delivery time, confirm order button
+- **Taste History section** in Taste Profile tab: Orders-based learning signal, cuisine frequency from orders
+- **Simulated order status progression**: Orders auto-advance through statuses on a timer in the frontend
 
 ### Modify
-N/A
+- `createOrUpdateProfile` and other protected backend functions: add auto-registration of caller as `#user` before the permission check
+- `getRecommendations`: Also return recommendations even with no feedback history (seed from onboarding preferences)
+- FeedTab: Replace "warming up" empty state with a proper taste-model-initialization flow that works immediately after onboarding
+- App.tsx: Add Orders tab to navigation
+- DishCard: Add platform order buttons
 
 ### Remove
-N/A
+- Nothing removed
 
 ## Implementation Plan
-1. Backend (Motoko):
-   - UserTasteVector type: spice, sweet, rich, veg, street_food, price_sensitivity, cuisine_affinity map
-   - DishTasteVector type: all 10 dish dimensions
-   - Dish and Restaurant types with full metadata
-   - Behavioral event log per user
-   - Recommendation scoring: weighted cosine similarity between user vector and dish vector + context boost
-   - Feedback ingestion: update user taste vector via exponential moving average
-   - Seed data: 30+ sample dishes across cuisines, 10+ restaurants
-   - APIs: getUserProfile, updateUserProfile, getDishes, getRecommendations, recordFeedback, getTasteVector, getAnalytics
-
-2. Frontend (React + TypeScript):
-   - Home/Feed: personalized ranked recommendations with match scores
-   - Taste Profile: radar chart of taste vector dimensions, cuisine affinity bars, editable preferences
-   - Explore: dish grid with filters (cuisine, diet, price, spice), swipe/rate actions
-   - Analytics: accuracy trend, learning loop status, evaluation metrics (precision, recall, NDCG)
-   - Onboarding: multi-step preference setup wizard
-   - Context bar: time of day, simulated weather affecting recommendations
+1. Update `main.mo`: add auto-user-registration helper, add DeliveryOrder types and storage, add order APIs, add `getPlatformDishes`, add `getOrderTasteHistory`
+2. Regenerate `backend.d.ts` via `generate_motoko_code`
+3. Update `useQueries.ts`: add `usePlaceOrder`, `useMyOrders`, `useUpdateOrderStatus`, `usePlatformDishes`, `useOrderTasteHistory` hooks
+4. Add `OrdersTab.tsx`: order list with status timeline, platform badge
+5. Add `OrderModal.tsx`: address entry + platform pick + confirm
+6. Update `DishCard.tsx`: add platform order buttons that open OrderModal
+7. Update `FeedTab.tsx`: fix empty-state wording, ensure recs load on first visit
+8. Update `TasteProfileTab.tsx`: add order-based taste history section
+9. Update `App.tsx`: add Orders tab (ShoppingBag icon)

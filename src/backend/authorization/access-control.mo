@@ -42,7 +42,8 @@ module {
     switch (state.userRoles.get(caller)) {
       case (?role) { role };
       case (null) {
-        Runtime.trap("User is not registered");
+        // Auto-treat unregistered non-anonymous callers as users
+        #user;
       };
     };
   };
@@ -52,6 +53,16 @@ module {
       Runtime.trap("Unauthorized: Only admins can assign user roles");
     };
     state.userRoles.add(user, role);
+  };
+
+  public func ensureRegistered(state : AccessControlState, caller : Principal) {
+    if (caller.isAnonymous()) { return };
+    switch (state.userRoles.get(caller)) {
+      case (?_) {};
+      case (null) {
+        state.userRoles.add(caller, #user);
+      };
+    };
   };
 
   public func hasPermission(state : AccessControlState, caller : Principal, requiredRole : UserRole) : Bool {

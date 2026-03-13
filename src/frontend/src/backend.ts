@@ -89,6 +89,7 @@ export class ExternalBlob {
         return this;
     }
 }
+export type Time = bigint;
 export interface TasteVector {
     sweetness: number;
     richness: number;
@@ -96,7 +97,19 @@ export interface TasteVector {
     spice: number;
     vegetarian: number;
 }
-export type Time = bigint;
+export interface DeliveryOrder {
+    id: string;
+    status: string;
+    deliveryAddress: string;
+    platform: string;
+    dishName: string;
+    restaurantName: string;
+    placedAt: Time;
+    cuisine: string;
+    dishId: string;
+    price: number;
+    estimatedMinutes: bigint;
+}
 export interface CuisineAffinity {
     score: number;
     cuisine: string;
@@ -106,6 +119,7 @@ export interface Dish {
     sweetness: number;
     richness: number;
     name: string;
+    platform: string;
     restaurantId: string;
     spice: number;
     cuisine: string;
@@ -135,12 +149,27 @@ export interface backendInterface {
     }>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getMyOrders(): Promise<Array<DeliveryOrder>>;
+    getOrderTasteHistory(): Promise<{
+        topCuisine: string;
+        totalOrders: bigint;
+        avgSpice: number;
+        cuisineBreakdown: Array<{
+            count: bigint;
+            cuisine: string;
+        }>;
+        avgRichness: number;
+        recentPlatforms: Array<string>;
+    }>;
+    getPlatformDishes(platform: string): Promise<Array<Dish>>;
     getRecommendations(_timeOfDay: string, _weather: string): Promise<Array<Dish>>;
     getTasteVector(): Promise<TasteVector>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
+    placeOrder(dishId: string, platform: string, deliveryAddress: string): Promise<string>;
     recordFeedback(dishId: string, action: string, rating: number): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    updateOrderStatus(orderId: string, newStatus: string): Promise<void>;
 }
 import type { UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -247,6 +276,58 @@ export class Backend implements backendInterface {
             return from_candid_UserRole_n4(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getMyOrders(): Promise<Array<DeliveryOrder>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMyOrders();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMyOrders();
+            return result;
+        }
+    }
+    async getOrderTasteHistory(): Promise<{
+        topCuisine: string;
+        totalOrders: bigint;
+        avgSpice: number;
+        cuisineBreakdown: Array<{
+            count: bigint;
+            cuisine: string;
+        }>;
+        avgRichness: number;
+        recentPlatforms: Array<string>;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getOrderTasteHistory();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getOrderTasteHistory();
+            return result;
+        }
+    }
+    async getPlatformDishes(arg0: string): Promise<Array<Dish>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPlatformDishes(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPlatformDishes(arg0);
+            return result;
+        }
+    }
     async getRecommendations(arg0: string, arg1: string): Promise<Array<Dish>> {
         if (this.processError) {
             try {
@@ -303,6 +384,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async placeOrder(arg0: string, arg1: string, arg2: string): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.placeOrder(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.placeOrder(arg0, arg1, arg2);
+            return result;
+        }
+    }
     async recordFeedback(arg0: string, arg1: string, arg2: number): Promise<void> {
         if (this.processError) {
             try {
@@ -328,6 +423,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.saveCallerUserProfile(arg0);
+            return result;
+        }
+    }
+    async updateOrderStatus(arg0: string, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateOrderStatus(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateOrderStatus(arg0, arg1);
             return result;
         }
     }

@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Dish, TasteVector, UserProfile } from "../backend.d";
+import type {
+  DeliveryOrder,
+  Dish,
+  TasteVector,
+  UserProfile,
+} from "../backend.d";
 import { useActor } from "./useActor";
 
 export function useUserProfile() {
@@ -8,7 +13,6 @@ export function useUserProfile() {
     queryKey: ["userProfile"],
     queryFn: async () => {
       if (!actor) return null;
-      // Timeout so the app never hangs indefinitely
       const timeout = new Promise<null>((resolve) =>
         setTimeout(() => resolve(null), 8000),
       );
@@ -30,6 +34,18 @@ export function useAllDishes() {
     queryFn: async () => {
       if (!actor) return [];
       return actor.getAllDishes().catch(() => []);
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function usePlatformDishes(platform: string) {
+  const { actor, isFetching } = useActor();
+  return useQuery<Dish[]>({
+    queryKey: ["platformDishes", platform],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getPlatformDishes(platform).catch(() => []);
     },
     enabled: !!actor && !isFetching,
   });
@@ -98,6 +114,52 @@ export function useAnalytics() {
   });
 }
 
+export function useMyOrders() {
+  const { actor, isFetching } = useActor();
+  return useQuery<DeliveryOrder[]>({
+    queryKey: ["myOrders"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getMyOrders().catch(() => []);
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useOrderTasteHistory() {
+  const { actor, isFetching } = useActor();
+  return useQuery<{
+    topCuisine: string;
+    totalOrders: bigint;
+    avgSpice: number;
+    cuisineBreakdown: Array<{ count: bigint; cuisine: string }>;
+    avgRichness: number;
+    recentPlatforms: Array<string>;
+  }>({
+    queryKey: ["orderTasteHistory"],
+    queryFn: async () => {
+      if (!actor)
+        return {
+          topCuisine: "",
+          totalOrders: BigInt(0),
+          avgSpice: 0,
+          cuisineBreakdown: [],
+          avgRichness: 0,
+          recentPlatforms: [],
+        };
+      return actor.getOrderTasteHistory().catch(() => ({
+        topCuisine: "",
+        totalOrders: BigInt(0),
+        avgSpice: 0,
+        cuisineBreakdown: [],
+        avgRichness: 0,
+        recentPlatforms: [],
+      }));
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
 export function useCreateOrUpdateProfile() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -135,6 +197,44 @@ export function useRecordFeedback() {
       queryClient.invalidateQueries({ queryKey: ["tasteVector"] });
       queryClient.invalidateQueries({ queryKey: ["recommendations"] });
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    },
+  });
+}
+
+export function usePlaceOrder() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      dishId,
+      platform,
+      deliveryAddress,
+    }: { dishId: string; platform: string; deliveryAddress: string }) => {
+      if (!actor) throw new Error("No actor");
+      return actor.placeOrder(dishId, platform, deliveryAddress);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myOrders"] });
+      queryClient.invalidateQueries({ queryKey: ["orderTasteHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["tasteVector"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    },
+  });
+}
+
+export function useUpdateOrderStatus() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      newStatus,
+    }: { orderId: string; newStatus: string }) => {
+      if (!actor) throw new Error("No actor");
+      return actor.updateOrderStatus(orderId, newStatus);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myOrders"] });
     },
   });
 }

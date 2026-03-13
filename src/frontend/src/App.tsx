@@ -6,6 +6,7 @@ import {
   Brain,
   Compass,
   LayoutGrid,
+  ShoppingBag,
   Sparkles,
   User,
   Wand2,
@@ -16,6 +17,7 @@ import AnalyticsTab from "./components/AnalyticsTab";
 import ExploreTab from "./components/ExploreTab";
 import FeedTab from "./components/FeedTab";
 import OnboardingWizard from "./components/OnboardingWizard";
+import OrdersTab from "./components/OrdersTab";
 import TasteProfileTab from "./components/TasteProfileTab";
 import { useActor } from "./hooks/useActor";
 import { useUserProfile } from "./hooks/useQueries";
@@ -29,7 +31,6 @@ export default function App() {
   } = useUserProfile();
   const [onboardingDone, setOnboardingDone] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  // Safety net: never show loading screen longer than 10 seconds
   const [timedOut, setTimedOut] = useState(false);
 
   const isLoading = (actorLoading || profileLoading) && !timedOut && !isError;
@@ -160,6 +161,11 @@ export default function App() {
                     label: "Explore",
                   },
                   {
+                    value: "orders",
+                    icon: <ShoppingBag className="w-3.5 h-3.5" />,
+                    label: "Orders",
+                  },
+                  {
                     value: "profile",
                     icon: <User className="w-3.5 h-3.5" />,
                     label: "Taste Profile",
@@ -212,6 +218,19 @@ export default function App() {
                 transition={{ duration: 0.3 }}
               >
                 <ExploreTab />
+              </motion.div>
+            </TabsContent>
+            <TabsContent
+              value="orders"
+              forceMount
+              className="mt-0 data-[state=inactive]:hidden"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <OrdersTab />
               </motion.div>
             </TabsContent>
             <TabsContent

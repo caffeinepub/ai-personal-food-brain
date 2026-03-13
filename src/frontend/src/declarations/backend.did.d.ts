@@ -11,11 +11,25 @@ import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
 export interface CuisineAffinity { 'score' : number, 'cuisine' : string }
+export interface DeliveryOrder {
+  'id' : string,
+  'status' : string,
+  'deliveryAddress' : string,
+  'platform' : string,
+  'dishName' : string,
+  'restaurantName' : string,
+  'placedAt' : Time,
+  'cuisine' : string,
+  'dishId' : string,
+  'price' : number,
+  'estimatedMinutes' : bigint,
+}
 export interface Dish {
   'id' : string,
   'sweetness' : number,
   'richness' : number,
   'name' : string,
+  'platform' : string,
   'restaurantId' : string,
   'spice' : number,
   'cuisine' : string,
@@ -57,12 +71,27 @@ export interface _SERVICE {
   >,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getMyOrders' : ActorMethod<[], Array<DeliveryOrder>>,
+  'getOrderTasteHistory' : ActorMethod<
+    [],
+    {
+      'topCuisine' : string,
+      'totalOrders' : bigint,
+      'avgSpice' : number,
+      'cuisineBreakdown' : Array<{ 'count' : bigint, 'cuisine' : string }>,
+      'avgRichness' : number,
+      'recentPlatforms' : Array<string>,
+    }
+  >,
+  'getPlatformDishes' : ActorMethod<[string], Array<Dish>>,
   'getRecommendations' : ActorMethod<[string, string], Array<Dish>>,
   'getTasteVector' : ActorMethod<[], TasteVector>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'placeOrder' : ActorMethod<[string, string, string], string>,
   'recordFeedback' : ActorMethod<[string, string, number], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'updateOrderStatus' : ActorMethod<[string, string], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

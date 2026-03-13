@@ -18,6 +18,7 @@ export const Dish = IDL.Record({
   'sweetness' : IDL.Float64,
   'richness' : IDL.Float64,
   'name' : IDL.Text,
+  'platform' : IDL.Text,
   'restaurantId' : IDL.Text,
   'spice' : IDL.Float64,
   'cuisine' : IDL.Text,
@@ -42,6 +43,19 @@ export const UserProfile = IDL.Record({
   'name' : IDL.Text,
   'createdAt' : Time,
 });
+export const DeliveryOrder = IDL.Record({
+  'id' : IDL.Text,
+  'status' : IDL.Text,
+  'deliveryAddress' : IDL.Text,
+  'platform' : IDL.Text,
+  'dishName' : IDL.Text,
+  'restaurantName' : IDL.Text,
+  'placedAt' : Time,
+  'cuisine' : IDL.Text,
+  'dishId' : IDL.Text,
+  'price' : IDL.Float64,
+  'estimatedMinutes' : IDL.Nat,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -65,6 +79,24 @@ export const idlService = IDL.Service({
     ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getMyOrders' : IDL.Func([], [IDL.Vec(DeliveryOrder)], ['query']),
+  'getOrderTasteHistory' : IDL.Func(
+      [],
+      [
+        IDL.Record({
+          'topCuisine' : IDL.Text,
+          'totalOrders' : IDL.Nat,
+          'avgSpice' : IDL.Float64,
+          'cuisineBreakdown' : IDL.Vec(
+            IDL.Record({ 'count' : IDL.Nat, 'cuisine' : IDL.Text })
+          ),
+          'avgRichness' : IDL.Float64,
+          'recentPlatforms' : IDL.Vec(IDL.Text),
+        }),
+      ],
+      ['query'],
+    ),
+  'getPlatformDishes' : IDL.Func([IDL.Text], [IDL.Vec(Dish)], ['query']),
   'getRecommendations' : IDL.Func(
       [IDL.Text, IDL.Text],
       [IDL.Vec(Dish)],
@@ -77,8 +109,10 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'placeOrder' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Text], []),
   'recordFeedback' : IDL.Func([IDL.Text, IDL.Text, IDL.Float64], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'updateOrderStatus' : IDL.Func([IDL.Text, IDL.Text], [], []),
 });
 
 export const idlInitArgs = [];
@@ -94,6 +128,7 @@ export const idlFactory = ({ IDL }) => {
     'sweetness' : IDL.Float64,
     'richness' : IDL.Float64,
     'name' : IDL.Text,
+    'platform' : IDL.Text,
     'restaurantId' : IDL.Text,
     'spice' : IDL.Float64,
     'cuisine' : IDL.Text,
@@ -118,6 +153,19 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'createdAt' : Time,
   });
+  const DeliveryOrder = IDL.Record({
+    'id' : IDL.Text,
+    'status' : IDL.Text,
+    'deliveryAddress' : IDL.Text,
+    'platform' : IDL.Text,
+    'dishName' : IDL.Text,
+    'restaurantName' : IDL.Text,
+    'placedAt' : Time,
+    'cuisine' : IDL.Text,
+    'dishId' : IDL.Text,
+    'price' : IDL.Float64,
+    'estimatedMinutes' : IDL.Nat,
+  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -141,6 +189,24 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getMyOrders' : IDL.Func([], [IDL.Vec(DeliveryOrder)], ['query']),
+    'getOrderTasteHistory' : IDL.Func(
+        [],
+        [
+          IDL.Record({
+            'topCuisine' : IDL.Text,
+            'totalOrders' : IDL.Nat,
+            'avgSpice' : IDL.Float64,
+            'cuisineBreakdown' : IDL.Vec(
+              IDL.Record({ 'count' : IDL.Nat, 'cuisine' : IDL.Text })
+            ),
+            'avgRichness' : IDL.Float64,
+            'recentPlatforms' : IDL.Vec(IDL.Text),
+          }),
+        ],
+        ['query'],
+      ),
+    'getPlatformDishes' : IDL.Func([IDL.Text], [IDL.Vec(Dish)], ['query']),
     'getRecommendations' : IDL.Func(
         [IDL.Text, IDL.Text],
         [IDL.Vec(Dish)],
@@ -153,8 +219,10 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'placeOrder' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Text], []),
     'recordFeedback' : IDL.Func([IDL.Text, IDL.Text, IDL.Float64], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'updateOrderStatus' : IDL.Func([IDL.Text, IDL.Text], [], []),
   });
 };
 
