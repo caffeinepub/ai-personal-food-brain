@@ -8,9 +8,7 @@ import {
   LayoutGrid,
   Shield,
   ShoppingBag,
-  Sparkles,
   User,
-  Wand2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
@@ -18,23 +16,31 @@ import AdminTab from "./components/AdminTab";
 import AnalyticsTab from "./components/AnalyticsTab";
 import ExploreTab from "./components/ExploreTab";
 import FeedTab from "./components/FeedTab";
+import ForgotPasswordScreen from "./components/ForgotPasswordScreen";
 import OnboardingWizard from "./components/OnboardingWizard";
 import OrdersTab from "./components/OrdersTab";
 import TasteProfileTab from "./components/TasteProfileTab";
+import UserAccountMenu from "./components/UserAccountMenu";
+import WelcomeScreen from "./components/WelcomeScreen";
 import { useActor } from "./hooks/useActor";
 import { useUserProfile } from "./hooks/useQueries";
 
+type WelcomeView = "welcome" | "onboarding" | "forgotPassword";
+
 export default function App() {
   const { actor, isFetching: actorLoading } = useActor();
-  const { isLoading: profileLoading, isError } = useUserProfile();
+  const {
+    isLoading: profileLoading,
+    isError,
+    data: profile,
+  } = useUserProfile();
   const [onboardingDone, setOnboardingDone] = useState(
     () => localStorage.getItem("onboardingComplete") === "true",
   );
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [welcomeView, setWelcomeView] = useState<WelcomeView>("welcome");
   const [timedOut, setTimedOut] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Only show loading screen if onboarding hasn't been completed yet
   const isLoading =
     !onboardingDone &&
     (actorLoading || profileLoading) &&
@@ -47,7 +53,6 @@ export default function App() {
     return () => clearTimeout(t);
   }, [isLoading]);
 
-  // Check admin status when actor is ready
   useEffect(() => {
     if (!actor || actorLoading) return;
     actor
@@ -56,7 +61,6 @@ export default function App() {
       .catch(() => setIsAdmin(false));
   }, [actor, actorLoading]);
 
-  // Sync onboardingDone with localStorage (in case another tab changes it)
   useEffect(() => {
     const sync = () =>
       setOnboardingDone(localStorage.getItem("onboardingComplete") === "true");
@@ -67,7 +71,26 @@ export default function App() {
   const handleOnboardingComplete = () => {
     localStorage.setItem("onboardingComplete", "true");
     setOnboardingDone(true);
-    setShowOnboarding(false);
+    setWelcomeView("welcome");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("onboardingComplete");
+    setOnboardingDone(false);
+    setWelcomeView("welcome");
+  };
+
+  const handleDeleteAccount = () => {
+    localStorage.removeItem("onboardingComplete");
+    setOnboardingDone(false);
+    setWelcomeView("welcome");
+    setIsAdmin(false);
+  };
+
+  const handleRetakeQuiz = () => {
+    localStorage.removeItem("onboardingComplete");
+    setOnboardingDone(false);
+    setWelcomeView("onboarding");
   };
 
   if (isLoading) {
@@ -97,7 +120,18 @@ export default function App() {
   }
 
   if (!onboardingDone) {
-    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
+    if (welcomeView === "onboarding") {
+      return <OnboardingWizard onComplete={handleOnboardingComplete} />;
+    }
+    if (welcomeView === "forgotPassword") {
+      return <ForgotPasswordScreen onBack={() => setWelcomeView("welcome")} />;
+    }
+    return (
+      <WelcomeScreen
+        onGetStarted={() => setWelcomeView("onboarding")}
+        onShowInfo={() => setWelcomeView("forgotPassword")}
+      />
+    );
   }
 
   const navTabs = [
@@ -148,20 +182,6 @@ export default function App() {
         }}
       />
 
-      <AnimatePresence>
-        {showOnboarding && (
-          <motion.div
-            className="fixed inset-0 z-[100]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <OnboardingWizard onComplete={handleOnboardingComplete} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <header className="sticky top-0 z-50 glass-card border-b border-border/60 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -180,32 +200,19 @@ export default function App() {
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
-              <span className="text-xs text-muted-foreground hidden sm:block">
-                Foodie
-              </span>
-            </div>
+
+          <div className="flex items-center gap-2">
             {isAdmin && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold">
                 Admin
               </span>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              data-ocid="header.retake_quiz_button"
-              onClick={() => {
-                localStorage.removeItem("onboardingComplete");
-                setOnboardingDone(false);
-                setShowOnboarding(true);
-              }}
-              className="h-7 px-2.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 gap-1.5"
-            >
-              <Wand2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Retake Quiz</span>
-            </Button>
+            <UserAccountMenu
+              profileName={profile?.name ?? null}
+              onLogout={handleLogout}
+              onDeleteAccount={handleDeleteAccount}
+              onRetakeQuiz={handleRetakeQuiz}
+            />
           </div>
         </div>
       </header>

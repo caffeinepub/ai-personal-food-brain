@@ -2,9 +2,10 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { useAllDishes, useRecordFeedback } from "../hooks/useQueries";
+import type { Dish } from "../backend.d";
+import { useAllDishes } from "../hooks/useQueries";
 import DishCard from "./DishCard";
+import OrderModal from "./OrderModal";
 
 const CUISINES = [
   "All",
@@ -31,8 +32,8 @@ export default function ExploreTab() {
   const [cuisine, setCuisine] = useState("All");
   const [diet, setDiet] = useState(getDefaultDiet);
   const [spiceLevel, setSpiceLevel] = useState("All");
+  const [orderDish, setOrderDish] = useState<Dish | null>(null);
   const { data: dishes, isLoading } = useAllDishes();
-  const recordFeedback = useRecordFeedback();
 
   const filtered = useMemo(() => {
     if (!dishes) return [];
@@ -43,8 +44,16 @@ export default function ExploreTab() {
         !d.cuisine.toLowerCase().includes(search.toLowerCase())
       )
         return false;
-      if (cuisine !== "All" && d.cuisine !== cuisine) return false;
-      if (diet !== "All" && d.dietType !== diet) return false;
+      // Case-insensitive cuisine match
+      if (
+        cuisine !== "All" &&
+        d.cuisine.toLowerCase().replace(/[_\s]+/g, " ") !==
+          cuisine.toLowerCase().replace(/[_\s]+/g, " ")
+      )
+        return false;
+      // Case-insensitive diet match
+      if (diet !== "All" && d.dietType.toLowerCase() !== diet.toLowerCase())
+        return false;
       if (spiceLevel !== "All") {
         if (spiceLevel === "Mild" && d.spice > 0.33) return false;
         if (spiceLevel === "Medium" && (d.spice <= 0.33 || d.spice > 0.66))
@@ -54,15 +63,6 @@ export default function ExploreTab() {
       return true;
     });
   }, [dishes, search, cuisine, diet, spiceLevel]);
-
-  const handleFeedback = async (
-    dishId: string,
-    action: string,
-    rating: number,
-  ) => {
-    await recordFeedback.mutateAsync({ dishId, action, rating });
-    toast.success("Taste profile updated ✨", { duration: 2000 });
-  };
 
   return (
     <div className="p-4 md:p-6 space-y-5">
@@ -184,9 +184,9 @@ export default function ExploreTab() {
               dish={dish}
               index={i}
               dataOcid={`explore.item.${i + 1}`}
-              onLove={() => handleFeedback(dish.id, "love", 5)}
-              onDislike={() => handleFeedback(dish.id, "dislike", 1)}
-              onOrder={() => handleFeedback(dish.id, "order", 4)}
+              onLove={() => {}}
+              onDislike={() => {}}
+              onOrder={(d) => setOrderDish(d)}
             />
           ))}
         </div>
@@ -206,6 +206,12 @@ export default function ExploreTab() {
           </p>
         </div>
       )}
+
+      <OrderModal
+        dish={orderDish}
+        isOpen={!!orderDish}
+        onClose={() => setOrderDish(null)}
+      />
     </div>
   );
 }

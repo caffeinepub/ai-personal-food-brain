@@ -11,7 +11,7 @@ import { Loader2, MapPin, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Dish } from "../backend.d";
-import { usePlaceOrder } from "../hooks/useQueries";
+import { usePlaceOrder, useRecordFeedback } from "../hooks/useQueries";
 
 interface OrderModalProps {
   dish: Dish | null;
@@ -23,6 +23,7 @@ export default function OrderModal({ dish, isOpen, onClose }: OrderModalProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<string>("");
   const [address, setAddress] = useState("");
   const placeOrder = usePlaceOrder();
+  const recordFeedback = useRecordFeedback();
 
   if (!dish) return null;
 
@@ -44,6 +45,9 @@ export default function OrderModal({ dish, isOpen, onClose }: OrderModalProps) {
         platform: selectedPlatform,
         deliveryAddress: address.trim(),
       });
+      await recordFeedback
+        .mutateAsync({ dishId: dish.id, action: "order", rating: 5 })
+        .catch(() => {});
       toast.success("Order placed! 🎉", {
         description: `Your ${dish.name} is being prepared. Track it in the Orders tab.`,
         duration: 4000,

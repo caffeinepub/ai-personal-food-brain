@@ -9,7 +9,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Dish } from "../backend.d";
 import {
@@ -43,6 +43,16 @@ function getMealTimeLabel(mt: string | null): { emoji: string; label: string } {
   return { emoji: "🕐", label: "Any Time" };
 }
 
+function baseMatchScore(dish: Dish): number {
+  return Math.min(
+    99,
+    Math.max(
+      50,
+      Math.round(60 + dish.popularity * 35 + Math.sin(dish.price) * 5),
+    ),
+  );
+}
+
 const WEATHERS = [
   { id: "Sunny", icon: <Sun className="w-3.5 h-3.5" />, label: "Sunny" },
   { id: "Rainy", icon: <CloudRain className="w-3.5 h-3.5" />, label: "Rainy" },
@@ -63,6 +73,8 @@ const MEAL_TIME_OPTIONS = [
   { id: "evening_snacks", emoji: "🫖", label: "Snacks" },
 ];
 
+type FeedbackKey = string; // `${dishId}:${action}`
+
 export default function FeedTab() {
   const timeOfDay = getTimeOfDay();
   const [weather, setWeather] = useState("Sunny");
@@ -71,6 +83,12 @@ export default function FeedTab() {
     () => localStorage.getItem("mealTime") ?? "lunch",
   );
   const [orderDish, setOrderDish] = useState<Dish | null>(null);
+  const [matchDeltas, setMatchDeltas] = useState<Record<string, number>>({});
+
+  // Anti-spam: track click counts and thresholds per dish+action
+  const feedbackClickCount = useRef<Record<FeedbackKey, number>>({});
+  const feedbackThreshold = useRef<Record<FeedbackKey, number>>({});
+
   const dietaryPref = localStorage.getItem("dietaryPref");
   const dietInfo = getDietLabel(dietaryPref);
   const mealInfo = getMealTimeLabel(mealTimeFilter);
@@ -83,11 +101,40 @@ export default function FeedTab() {
   const { data: profile } = useUserProfile();
   const recordFeedback = useRecordFeedback();
 
+  const getEffectiveScore = (dish: Dish) =>
+    Math.min(
+      99,
+      Math.max(5, baseMatchScore(dish) + (matchDeltas[dish.id] ?? 0)),
+    );
+
   const handleFeedback = async (
     dishId: string,
     action: string,
     rating: number,
   ) => {
+    const key: FeedbackKey = `${dishId}:${action}`;
+    const currentCount = (feedbackClickCount.current[key] ?? 0) + 1;
+    feedbackClickCount.current[key] = currentCount;
+
+    // First click always counts; subsequent clicks need to hit threshold
+    if (currentCount === 1) {
+      // Set a random threshold for next effective click (4-6 additional clicks)
+      feedbackThreshold.current[key] =
+        currentCount + 4 + Math.floor(Math.random() * 3);
+    } else if (currentCount < feedbackThreshold.current[key]) {
+      // Absorb the click silently
+      return;
+    } else {
+      // Threshold reached -- counts again, set next threshold
+      feedbackThreshold.current[key] =
+        currentCount + 4 + Math.floor(Math.random() * 3);
+    }
+
+    // Update local match delta
+    setMatchDeltas((prev) => ({
+      ...prev,
+      [dishId]: (prev[dishId] ?? 0) + (action === "love" ? 5 : -10),
+    }));
     await recordFeedback.mutateAsync({ dishId, action, rating });
     toast.success("Taste profile updated ✨", {
       description: "Your AI Food Brain is learning your preferences.",
@@ -97,10 +144,8 @@ export default function FeedTab() {
   };
 
   const filteredDishes = (dishes ?? []).filter((d) => {
-    // Apply dietary preference filter
     if (dietaryPref === "veg" && d.dietType !== "veg") return false;
     if (dietaryPref === "vegan" && d.dietType !== "vegan") return false;
-    // Platform filter
     if (
       platformFilter !== "all" &&
       d.platform !== platformFilter &&
@@ -109,6 +154,10 @@ export default function FeedTab() {
       return false;
     return true;
   });
+
+  const sortedDishes = [...filteredDishes]
+    .slice(0, 10)
+    .sort((a, b) => getEffectiveScore(b) - getEffectiveScore(a));
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -121,7 +170,6 @@ export default function FeedTab() {
                 {timeOfDay}
               </span>
             </div>
-            {/* Dietary preference badge */}
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground">Diet</span>
               <span
@@ -161,7 +209,12 @@ export default function FeedTab() {
           </div>
           <Button
             data-ocid="feed.primary_button"
-            onClick={() => refetch()}
+            onClick={() => {
+              setMatchDeltas({});
+              feedbackClickCount.current = {};
+              feedbackThreshold.current = {};
+              refetch();
+            }}
             size="sm"
             className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 font-semibold"
           >
@@ -268,13 +321,15 @@ export default function FeedTab() {
         </div>
       )}
 
-      {!isLoading && filteredDishes.length > 0 && (
+      {!isLoading && sortedDishes.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredDishes.slice(0, 10).map((dish, i) => (
+          {sortedDishes.map((dish, i) => (
             <DishCard
               key={dish.id}
               dish={dish}
               index={i}
+              rank={i + 1}
+              matchScoreOverride={getEffectiveScore(dish)}
               dataOcid={`feed.item.${i + 1}`}
               onLove={() => handleFeedback(dish.id, "love", 5)}
               onDislike={() => handleFeedback(dish.id, "dislike", 1)}
@@ -284,7 +339,7 @@ export default function FeedTab() {
         </div>
       )}
 
-      {!isLoading && filteredDishes.length === 0 && (
+      {!isLoading && sortedDishes.length === 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
