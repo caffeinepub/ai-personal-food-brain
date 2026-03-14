@@ -31,7 +31,7 @@ actor {
     createdAt : Time.Time;
   };
 
-  type Dish = {
+  public type Dish = {
     id : Text;
     name : Text;
     spice : Float;
@@ -63,8 +63,23 @@ actor {
     cuisine : Text;
   };
 
-  // Seeded dishes
-  let allDishes : [Dish] = [
+  public type UserSummary = {
+    principal : Principal;
+    name : Text;
+    role : Text;
+    createdAt : Time.Time;
+    totalOrders : Nat;
+  };
+
+  public type AppStats = {
+    totalUsers : Nat;
+    totalInteractions : Nat;
+    totalOrders : Nat;
+    totalDishes : Nat;
+  };
+
+  // Seeded dishes - mutable so admin can add/edit/delete
+  var allDishes : [Dish] = [
     { id="1"; name="Paneer Butter Masala"; spice=0.3; sweetness=0.2; richness=0.9; dietType="vegetarian"; cuisine="north indian"; price=200.0; popularity=0.9; restaurantId="1"; platform="both" },
     { id="2"; name="Chicken Tikka Masala"; spice=0.6; sweetness=0.1; richness=0.8; dietType="non-vegetarian"; cuisine="north indian"; price=250.0; popularity=0.8; restaurantId="2"; platform="both" },
     { id="3"; name="Dal Makhani"; spice=0.2; sweetness=0.3; richness=0.7; dietType="vegetarian"; cuisine="north indian"; price=180.0; popularity=0.85; restaurantId="1"; platform="swiggy" },
@@ -116,6 +131,7 @@ actor {
   let orderHistory = Map.empty<Principal, [DeliveryOrder]>();
   var totalInteractions : Nat = 0;
   var nextOrderId : Nat = 0;
+  var nextDishId : Nat = 31;
 
   let defaultTasteVector : TasteVector = {
     spice = 0.5; sweetness = 0.5; richness = 0.5; vegetarian = 0.5;
@@ -191,6 +207,93 @@ actor {
     allDishes.filter(func(d) {
       d.platform == platform or d.platform == "both"
     });
+  };
+
+  // ---- Admin: Dish Management ----
+
+  public shared ({ caller }) func adminAddDish(
+    name : Text, spice : Float, sweetness : Float, richness : Float,
+    dietType : Text, cuisine : Text, price : Float, popularity : Float,
+    restaurantId : Text, platform : Text
+  ) : async Text {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Admin only");
+    };
+    let id = nextDishId.toText();
+    nextDishId += 1;
+    let newDish : Dish = { id; name; spice; sweetness; richness; dietType; cuisine; price; popularity; restaurantId; platform };
+    allDishes := allDishes.concat([newDish]);
+    id;
+  };
+
+  public shared ({ caller }) func adminUpdateDish(
+    id : Text, name : Text, spice : Float, sweetness : Float, richness : Float,
+    dietType : Text, cuisine : Text, price : Float, popularity : Float,
+    restaurantId : Text, platform : Text
+  ) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Admin only");
+    };
+    allDishes := allDishes.map(func(d) {
+      if (d.id == id) { { id; name; spice; sweetness; richness; dietType; cuisine; price; popularity; restaurantId; platform } }
+      else { d };
+    });
+  };
+
+  public shared ({ caller }) func adminDeleteDish(id : Text) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Admin only");
+    };
+    allDishes := allDishes.filter(func(d) { d.id != id });
+  };
+
+  // ---- Admin: User Management ----
+
+  public query ({ caller }) func adminGetAllUsers() : async [UserSummary] {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Admin only");
+    };
+    userProfiles.entries().toArray().map(func((p, profile)) {
+      let roleText = switch (accessControlState.userRoles.get(p)) {
+        case (?(#admin)) { "admin" };
+        case (?(#user)) { "user" };
+        case (?(#guest)) { "guest" };
+        case (null) { "user" };
+      };
+      let orders = switch (orderHistory.get(p)) {
+        case (?o) { o.size() };
+        case (null) { 0 };
+      };
+      { principal=p; name=profile.name; role=roleText; createdAt=profile.createdAt; totalOrders=orders };
+    });
+  };
+
+  public shared ({ caller }) func adminSetUserRole(user : Principal, role : Text) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Admin only");
+    };
+    let newRole = if (role == "admin") { #admin }
+      else if (role == "guest") { #guest }
+      else { #user };
+    accessControlState.userRoles.add(user, newRole);
+  };
+
+  // ---- Admin: App Stats ----
+
+  public query ({ caller }) func adminGetAppStats() : async AppStats {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Admin only");
+    };
+    var totalOrders : Nat = 0;
+    for ((_, orders) in orderHistory.entries()) {
+      totalOrders += orders.size();
+    };
+    {
+      totalUsers = userProfiles.size();
+      totalInteractions;
+      totalOrders;
+      totalDishes = allDishes.size();
+    };
   };
 
   // ---- Recommendations ----

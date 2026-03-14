@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -15,7 +16,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { useCreateOrUpdateProfile } from "../hooks/useQueries";
+import { useAllDishes, useCreateOrUpdateProfile } from "../hooks/useQueries";
 
 const CUISINES = [
   { id: "north_indian", label: "🍛 North Indian", ocid: "onboarding.item.1" },
@@ -90,6 +91,12 @@ const MEAL_TIMES = [
   },
 ];
 
+const DIET_EMOJI: Record<string, string> = {
+  veg: "🌿",
+  vegan: "🥦",
+  "non-veg": "🍖",
+};
+
 export default function OnboardingWizard({
   onComplete,
 }: { onComplete: () => void }) {
@@ -112,6 +119,8 @@ export default function OnboardingWizard({
   ]);
 
   const createProfile = useCreateOrUpdateProfile();
+  // Fetch all dishes at component level (not conditionally)
+  const { data: allDishes, isLoading: dishesLoading } = useAllDishes();
 
   const toggleCuisine = (id: string) => {
     setSelectedCuisines((prev) =>
@@ -119,20 +128,56 @@ export default function OnboardingWizard({
     );
   };
 
-  const handleFinish = async () => {
+  const handleFinish = () => {
+    // Save completion flag FIRST so even if backend call fails or is slow,
+    // user doesn't get stuck in the onboarding loop on reload.
+    localStorage.setItem("onboardingComplete", "true");
     localStorage.setItem("dietaryPref", dietPref ?? "any");
     localStorage.setItem("mealTime", mealTime ?? "lunch");
     if (age) localStorage.setItem("userAge", age);
     if (bio) localStorage.setItem("userBio", bio);
-    try {
-      await createProfile.mutateAsync({ username: name, spice, sweet, rich });
-    } catch (_) {
-      // proceed even if backend call fails
-    }
+    // Immediately transition — don't block on backend
     onComplete();
+    // Save to backend in background (fire-and-forget)
+    createProfile.mutate({ username: name, spice, sweet, rich });
   };
 
-  const TOTAL_STEPS = 5;
+  // Filter dishes for Step 5
+  const filteredDishes = (() => {
+    if (!allDishes) return [];
+    let dishes = [...allDishes];
+    // Diet filter
+    if (dietPref === "veg") {
+      dishes = dishes.filter(
+        (d) => (d.dietType as string).toLowerCase() === "veg",
+      );
+    } else if (dietPref === "vegan") {
+      dishes = dishes.filter(
+        (d) => (d.dietType as string).toLowerCase() === "vegan",
+      );
+    } else if (dietPref === "non-veg") {
+      dishes = dishes.filter((d) => {
+        const dt = (d.dietType as string).toLowerCase();
+        return dt === "non-veg" || dt === "non_veg" || dt === "any";
+      });
+    }
+    // Cuisine filter — case-insensitive partial match
+    if (selectedCuisines.length > 0) {
+      dishes = dishes.filter((d) => {
+        const cuisineLower = (d.cuisine as string)
+          .toLowerCase()
+          .replace(/ /g, "_");
+        return selectedCuisines.some(
+          (sc) =>
+            cuisineLower.includes(sc.toLowerCase()) ||
+            sc.toLowerCase().includes(cuisineLower),
+        );
+      });
+    }
+    return dishes.slice(0, 6);
+  })();
+
+  const TOTAL_STEPS = 6;
 
   const steps = [
     {
@@ -164,6 +209,12 @@ export default function OnboardingWizard({
       subtitle: "Select all the cuisines you enjoy. Multi-select is fine!",
       icon: <Candy className="w-8 h-8 text-primary" />,
     },
+    {
+      title: "Your Personalized Picks",
+      subtitle:
+        "Here are dishes matched to your taste profile. You can explore and rate more after launch.",
+      icon: <Sparkles className="w-8 h-8 text-primary" />,
+    },
   ];
 
   const canContinue = () => {
@@ -171,7 +222,8 @@ export default function OnboardingWizard({
     if (step === 1) return dietPref !== null;
     if (step === 2) return true;
     if (step === 3) return mealTime !== null;
-    return selectedCuisines.length > 0;
+    if (step === 4) return selectedCuisines.length > 0;
+    return true; // step 5 — always can finish
   };
 
   return (
@@ -201,9 +253,9 @@ export default function OnboardingWizard({
         animate={{ opacity: 1, scale: 1 }}
         className="relative glass-card rounded-3xl p-8 w-full max-w-md"
       >
-        {/* Progress bar — 5 steps */}
+        {/* Progress bar — 6 steps */}
         <div className="flex gap-1.5 mb-8">
-          {[0, 1, 2, 3, 4].map((i) => (
+          {[0, 1, 2, 3, 4, 5].map((i) => (
             <div
               key={i}
               className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
@@ -468,6 +520,77 @@ export default function OnboardingWizard({
               ))}
             </motion.div>
           )}
+
+          {/* Step 5 — Personalized Dish Picks */}
+          {step === 5 && (
+            <motion.div
+              key="step5-dishes"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-3 max-h-72 overflow-y-auto pr-1"
+            >
+              {dishesLoading ? (
+                // Loading skeletons
+                [1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card/40"
+                  >
+                    <Skeleton className="w-10 h-10 rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-3 w-3/4 rounded" />
+                      <Skeleton className="h-3 w-1/2 rounded" />
+                    </div>
+                    <Skeleton className="h-3 w-12 rounded" />
+                  </div>
+                ))
+              ) : filteredDishes.length === 0 ? (
+                <div
+                  data-ocid="onboarding.empty_state"
+                  className="text-center py-8 text-muted-foreground"
+                >
+                  <span className="text-4xl block mb-2">🍽️</span>
+                  <p className="text-sm">
+                    No dishes matched your filters — you'll discover more in the
+                    feed!
+                  </p>
+                </div>
+              ) : (
+                filteredDishes.map((dish, idx) => {
+                  const dietKey = (dish.dietType as string).toLowerCase();
+                  const emoji = DIET_EMOJI[dietKey] ?? "🍽️";
+                  const spiceLevel = Math.round(dish.spice * 5);
+                  return (
+                    <motion.div
+                      key={dish.id as string}
+                      data-ocid={`onboarding.item.${idx + 1}`}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.06 }}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card/40 hover:border-primary/40 transition-colors"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-xl flex-shrink-0">
+                        {emoji}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {dish.name as string}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {dish.cuisine as string} ·{" "}
+                          {spiceLevel > 0 ? "🌶️".repeat(spiceLevel) : "mild"}
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold text-primary whitespace-nowrap">
+                        ₹{dish.price as number}
+                      </span>
+                    </motion.div>
+                  );
+                })
+              )}
+            </motion.div>
+          )}
         </AnimatePresence>
 
         <div className="flex gap-3 mt-8">
@@ -492,22 +615,12 @@ export default function OnboardingWizard({
             <Button
               data-ocid="onboarding.submit_button"
               onClick={handleFinish}
-              disabled={
-                createProfile.isPending || selectedCuisines.length === 0
-              }
               className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
             >
-              {createProfile.isPending ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                  Creating your brain...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  Launch My Food Brain 🚀
-                </span>
-              )}
+              <span className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                Launch My Food Brain 🚀
+              </span>
             </Button>
           )}
         </div>

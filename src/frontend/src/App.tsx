@@ -6,6 +6,7 @@ import {
   Brain,
   Compass,
   LayoutGrid,
+  Shield,
   ShoppingBag,
   Sparkles,
   User,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import AdminTab from "./components/AdminTab";
 import AnalyticsTab from "./components/AnalyticsTab";
 import ExploreTab from "./components/ExploreTab";
 import FeedTab from "./components/FeedTab";
@@ -23,26 +25,50 @@ import { useActor } from "./hooks/useActor";
 import { useUserProfile } from "./hooks/useQueries";
 
 export default function App() {
-  const { isFetching: actorLoading } = useActor();
-  const {
-    data: profile,
-    isLoading: profileLoading,
-    isError,
-  } = useUserProfile();
+  const { actor, isFetching: actorLoading } = useActor();
+  const { isLoading: profileLoading, isError } = useUserProfile();
   const [onboardingDone, setOnboardingDone] = useState(
     () => localStorage.getItem("onboardingComplete") === "true",
   );
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const isLoading = (actorLoading || profileLoading) && !timedOut && !isError;
-  const hasProfile = !!profile || onboardingDone;
+  // Only show loading screen if onboarding hasn't been completed yet
+  const isLoading =
+    !onboardingDone &&
+    (actorLoading || profileLoading) &&
+    !timedOut &&
+    !isError;
 
   useEffect(() => {
     if (!isLoading) return;
     const t = setTimeout(() => setTimedOut(true), 10000);
     return () => clearTimeout(t);
   }, [isLoading]);
+
+  // Check admin status when actor is ready
+  useEffect(() => {
+    if (!actor || actorLoading) return;
+    actor
+      .isCallerAdmin()
+      .then((result) => setIsAdmin(result))
+      .catch(() => setIsAdmin(false));
+  }, [actor, actorLoading]);
+
+  // Sync onboardingDone with localStorage (in case another tab changes it)
+  useEffect(() => {
+    const sync = () =>
+      setOnboardingDone(localStorage.getItem("onboardingComplete") === "true");
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem("onboardingComplete", "true");
+    setOnboardingDone(true);
+    setShowOnboarding(false);
+  };
 
   if (isLoading) {
     return (
@@ -70,16 +96,46 @@ export default function App() {
     );
   }
 
-  if (!hasProfile) {
-    return (
-      <OnboardingWizard
-        onComplete={() => {
-          localStorage.setItem("onboardingComplete", "true");
-          setOnboardingDone(true);
-        }}
-      />
-    );
+  if (!onboardingDone) {
+    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
   }
+
+  const navTabs = [
+    {
+      value: "feed",
+      icon: <LayoutGrid className="w-3.5 h-3.5" />,
+      label: "Feed",
+    },
+    {
+      value: "explore",
+      icon: <Compass className="w-3.5 h-3.5" />,
+      label: "Explore",
+    },
+    {
+      value: "orders",
+      icon: <ShoppingBag className="w-3.5 h-3.5" />,
+      label: "Orders",
+    },
+    {
+      value: "profile",
+      icon: <User className="w-3.5 h-3.5" />,
+      label: "Taste Profile",
+    },
+    {
+      value: "analytics",
+      icon: <BarChart3 className="w-3.5 h-3.5" />,
+      label: "Analytics",
+    },
+    ...(isAdmin
+      ? [
+          {
+            value: "admin",
+            icon: <Shield className="w-3.5 h-3.5" />,
+            label: "Admin",
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div className="min-h-screen mesh-bg">
@@ -101,13 +157,7 @@ export default function App() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <OnboardingWizard
-              onComplete={() => {
-                localStorage.setItem("onboardingComplete", "true");
-                setShowOnboarding(false);
-                setOnboardingDone(true);
-              }}
-            />
+            <OnboardingWizard onComplete={handleOnboardingComplete} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -134,18 +184,21 @@ export default function App() {
             <div className="flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
               <span className="text-xs text-muted-foreground hidden sm:block">
-                Hi,{" "}
-                <span className="text-foreground font-medium">
-                  {profile?.name ?? "Foodie"}
-                </span>
+                Foodie
               </span>
             </div>
+            {isAdmin && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold">
+                Admin
+              </span>
+            )}
             <Button
               variant="ghost"
               size="sm"
               data-ocid="header.retake_quiz_button"
               onClick={() => {
                 localStorage.removeItem("onboardingComplete");
+                setOnboardingDone(false);
                 setShowOnboarding(true);
               }}
               className="h-7 px-2.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 gap-1.5"
@@ -162,33 +215,7 @@ export default function App() {
           <div className="sticky top-14 z-40 glass-card border-b border-border/40 backdrop-blur-xl">
             <div className="max-w-7xl mx-auto px-4 md:px-6">
               <TabsList className="h-auto bg-transparent gap-0 p-0 rounded-none">
-                {[
-                  {
-                    value: "feed",
-                    icon: <LayoutGrid className="w-3.5 h-3.5" />,
-                    label: "Feed",
-                  },
-                  {
-                    value: "explore",
-                    icon: <Compass className="w-3.5 h-3.5" />,
-                    label: "Explore",
-                  },
-                  {
-                    value: "orders",
-                    icon: <ShoppingBag className="w-3.5 h-3.5" />,
-                    label: "Orders",
-                  },
-                  {
-                    value: "profile",
-                    icon: <User className="w-3.5 h-3.5" />,
-                    label: "Taste Profile",
-                  },
-                  {
-                    value: "analytics",
-                    icon: <BarChart3 className="w-3.5 h-3.5" />,
-                    label: "Analytics",
-                  },
-                ].map((tab) => (
+                {navTabs.map((tab) => (
                   <TabsTrigger
                     key={tab.value}
                     value={tab.value}
@@ -272,6 +299,21 @@ export default function App() {
                 <AnalyticsTab />
               </motion.div>
             </TabsContent>
+            {isAdmin && (
+              <TabsContent
+                value="admin"
+                forceMount
+                className="mt-0 data-[state=inactive]:hidden"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <AdminTab />
+                </motion.div>
+              </TabsContent>
+            )}
           </AnimatePresence>
         </Tabs>
       </main>

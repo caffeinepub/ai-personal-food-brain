@@ -50,6 +50,19 @@ export interface UserProfile {
     name: string;
     createdAt: Time;
 }
+export interface UserSummary {
+    principal: Principal;
+    name: string;
+    role: string;
+    createdAt: Time;
+    totalOrders: bigint;
+}
+export interface AppStats {
+    totalUsers: bigint;
+    totalInteractions: bigint;
+    totalOrders: bigint;
+    totalDishes: bigint;
+}
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -87,4 +100,11 @@ export interface backendInterface {
     recordFeedback(dishId: string, action: string, rating: number): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     updateOrderStatus(orderId: string, newStatus: string): Promise<void>;
+    // Admin APIs
+    adminAddDish(name: string, spice: number, sweetness: number, richness: number, dietType: string, cuisine: string, price: number, popularity: number, restaurantId: string, platform: string): Promise<string>;
+    adminUpdateDish(id: string, name: string, spice: number, sweetness: number, richness: number, dietType: string, cuisine: string, price: number, popularity: number, restaurantId: string, platform: string): Promise<void>;
+    adminDeleteDish(id: string): Promise<void>;
+    adminGetAllUsers(): Promise<Array<UserSummary>>;
+    adminSetUserRole(user: Principal, role: string): Promise<void>;
+    adminGetAppStats(): Promise<AppStats>;
 }
