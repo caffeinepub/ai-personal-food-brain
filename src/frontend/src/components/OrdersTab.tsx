@@ -41,10 +41,10 @@ const STATUS_NEXT: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  placed: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-  preparing: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
-  out_for_delivery: "bg-orange-500/20 text-orange-300 border-orange-500/30",
-  delivered: "bg-green-500/20 text-green-300 border-green-500/30",
+  placed: "bg-blue-50 text-blue-700 border-blue-200",
+  preparing: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  out_for_delivery: "bg-orange-50 text-orange-700 border-orange-200",
+  delivered: "bg-green-50 text-green-700 border-green-200",
 };
 
 function StatusStepper({ status }: { status: string }) {
@@ -59,10 +59,10 @@ function StatusStepper({ status }: { status: string }) {
             <div
               className={`flex items-center justify-center w-6 h-6 rounded-full text-xs flex-shrink-0 transition-all ${
                 isDone
-                  ? "bg-green-500/30 text-green-300"
+                  ? "bg-green-100 text-green-700"
                   : isActive
-                    ? "bg-primary/30 text-primary ring-2 ring-primary/50"
-                    : "bg-muted/50 text-muted-foreground"
+                    ? "bg-primary/15 text-primary ring-2 ring-primary/40"
+                    : "bg-secondary text-muted-foreground"
               }`}
             >
               {step.icon}
@@ -70,7 +70,7 @@ function StatusStepper({ status }: { status: string }) {
             {i < STATUS_STEPS.length - 1 && (
               <div
                 className={`flex-1 h-0.5 mx-1 rounded-full transition-all ${
-                  isDone ? "bg-green-500/50" : "bg-muted/40"
+                  isDone ? "bg-green-300" : "bg-border"
                 }`}
               />
             )}
@@ -140,7 +140,7 @@ function OrderCard({ order, index }: { order: DeliveryOrder; index: number }) {
             <span
               className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
                 STATUS_COLORS[order.status] ||
-                "bg-muted/50 text-muted-foreground border-border"
+                "bg-secondary text-muted-foreground border-border"
               }`}
             >
               {order.status.replace(/_/g, " ")}

@@ -153,6 +153,19 @@ actor {
     };
   };
 
+  // ---- Admin: Claim first admin slot ----
+  // Allows any logged-in user to become admin if no admin has been assigned yet.
+  // Once an admin exists, this function does nothing and returns false.
+  public shared ({ caller }) func claimFirstAdmin() : async Bool {
+    if (caller.isAnonymous()) { return false };
+    if (not accessControlState.adminAssigned) {
+      accessControlState.userRoles.add(caller, #admin);
+      accessControlState.adminAssigned := true;
+      return true;
+    };
+    false;
+  };
+
   // ---- User Profile APIs ----
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {

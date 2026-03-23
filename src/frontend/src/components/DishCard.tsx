@@ -17,14 +17,14 @@ interface DishCardProps {
 }
 
 const cuisineColors: Record<string, string> = {
-  "North Indian": "bg-orange-500/20 text-orange-300 border-orange-500/30",
-  Chinese: "bg-red-500/20 text-red-300 border-red-500/30",
-  Italian: "bg-green-500/20 text-green-300 border-green-500/30",
-  Mexican: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
-  Japanese: "bg-pink-500/20 text-pink-300 border-pink-500/30",
-  Thai: "bg-teal-500/20 text-teal-300 border-teal-500/30",
-  "South Indian": "bg-amber-500/20 text-amber-300 border-amber-500/30",
-  Mediterranean: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+  "North Indian": "bg-orange-50 text-orange-700 border-orange-200",
+  Chinese: "bg-red-50 text-red-700 border-red-200",
+  Italian: "bg-green-50 text-green-700 border-green-200",
+  Mexican: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  Japanese: "bg-pink-50 text-pink-700 border-pink-200",
+  Thai: "bg-teal-50 text-teal-700 border-teal-200",
+  "South Indian": "bg-amber-50 text-amber-700 border-amber-200",
+  Mediterranean: "bg-blue-50 text-blue-700 border-blue-200",
 };
 
 function getMatchScore(dish: Dish): number {
@@ -106,7 +106,7 @@ function PlatformBadges({ platform }: { platform: string }) {
 
 export default function DishCard({
   dish,
-  index,
+  index: _index,
   rank,
   matchScoreOverride,
   onLove,
@@ -125,40 +125,40 @@ export default function DishCard({
   const healthScore = getHealthScore(dish);
   const cuisineColor =
     cuisineColors[dish.cuisine] ||
-    "bg-purple-500/20 text-purple-300 border-purple-500/30";
+    "bg-purple-50 text-purple-700 border-purple-200";
   const dietEmoji =
     dish.dietType === "veg" ? "🌿" : dish.dietType === "vegan" ? "🥦" : "🍖";
 
   const rankColor =
     rank === 1
-      ? "oklch(0.80 0.20 55)"
+      ? "oklch(0.68 0.22 50)"
       : rank === 2
-        ? "oklch(0.75 0.08 220)"
+        ? "oklch(0.60 0.10 220)"
         : rank === 3
-          ? "oklch(0.68 0.14 45)"
-          : "oklch(0.55 0.04 260)";
+          ? "oklch(0.58 0.14 45)"
+          : "oklch(0.65 0.04 260)";
 
   return (
     <>
       <motion.div
         data-ocid={dataOcid}
         layout
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{
-          delay: index * 0.04,
+          opacity: { duration: 0.35 },
+          y: { duration: 0.35 },
           duration: 0.35,
           layout: { duration: 0.4, ease: "easeInOut" },
         }}
         onClick={() => setDetailOpen(true)}
-        className="glass-card rounded-2xl overflow-hidden group hover:border-primary/40 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer relative"
-        style={{ boxShadow: "0 4px 24px oklch(0 0 0 / 0.3)" }}
+        className="glass-card rounded-2xl overflow-hidden group hover:border-primary/40 transition-all duration-300 hover:scale-[1.02] hover:shadow-md cursor-pointer relative"
       >
         <div
           className="h-1.5 w-full"
           style={{
             background:
-              "linear-gradient(90deg, oklch(0.75 0.18 55), oklch(0.65 0.20 25))",
+              "linear-gradient(90deg, oklch(0.68 0.22 50), oklch(0.62 0.18 30))",
           }}
         />
 
@@ -167,11 +167,10 @@ export default function DishCard({
           <div
             className="absolute top-3 left-3 z-10 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black"
             style={{
-              background:
-                rank <= 3 ? `${rankColor}22` : "oklch(0.18 0.02 260 / 0.8)",
+              background: `${rankColor}18`,
               border: `1.5px solid ${rankColor}`,
               color: rankColor,
-              boxShadow: rank <= 3 ? `0 0 8px ${rankColor}44` : "none",
+              boxShadow: rank <= 3 ? `0 0 8px ${rankColor}33` : "none",
             }}
           >
             #{rank}
@@ -197,7 +196,7 @@ export default function DishCard({
               style={{ width: 52, height: 52 }}
             >
               <div
-                className="bg-background/80 rounded-full flex items-center justify-center"
+                className="bg-card rounded-full flex items-center justify-center"
                 style={{ width: 44, height: 44 }}
               >
                 <span className="text-xs font-bold text-primary">
@@ -213,10 +212,10 @@ export default function DishCard({
             >
               {dish.cuisine}
             </span>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground border border-border">
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground border border-border">
               ₹{dish.price.toFixed(0)}
             </span>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground border border-border">
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground border border-border">
               ~{deliveryTime} min
             </span>
             {dish.platform && <PlatformBadges platform={dish.platform} />}
@@ -236,7 +235,7 @@ export default function DishCard({
                 onLove?.();
               }}
               data-ocid={dataOcid ? `${dataOcid}.button` : undefined}
-              className="flex-1 h-8 text-xs gap-1 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/40"
+              className="flex-1 h-8 text-xs gap-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 hover:border-rose-300"
             >
               <Heart className="w-3 h-3" />
               Love
@@ -248,7 +247,7 @@ export default function DishCard({
                 e.stopPropagation();
                 onDislike?.();
               }}
-              className="flex-1 h-8 text-xs gap-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-border"
+              className="flex-1 h-8 text-xs gap-1 text-muted-foreground hover:text-foreground hover:bg-secondary border border-border"
             >
               <ThumbsDown className="w-3 h-3" />
               Skip

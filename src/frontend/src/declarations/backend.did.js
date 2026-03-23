@@ -60,6 +60,7 @@ export const DeliveryOrder = IDL.Record({
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'claimFirstAdmin' : IDL.Func([], [IDL.Bool], []),
   'createOrUpdateProfile' : IDL.Func(
       [IDL.Text, IDL.Float64, IDL.Float64, IDL.Float64],
       [],
@@ -170,6 +171,7 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'claimFirstAdmin' : IDL.Func([], [IDL.Bool], []),
     'createOrUpdateProfile' : IDL.Func(
         [IDL.Text, IDL.Float64, IDL.Float64, IDL.Float64],
         [],

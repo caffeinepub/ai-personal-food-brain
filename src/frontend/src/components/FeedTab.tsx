@@ -133,7 +133,7 @@ export default function FeedTab() {
     // Update local match delta
     setMatchDeltas((prev) => ({
       ...prev,
-      [dishId]: (prev[dishId] ?? 0) + (action === "love" ? 5 : -10),
+      [dishId]: (prev[dishId] ?? 0) + (action === "love" ? 1 : -1),
     }));
     await recordFeedback.mutateAsync({ dishId, action, rating });
     toast.success("Taste profile updated ✨", {
@@ -175,11 +175,11 @@ export default function FeedTab() {
               <span
                 className={`text-sm font-semibold px-3 py-1 rounded-full ${
                   dietaryPref === "veg"
-                    ? "bg-green-500/15 text-green-400"
+                    ? "bg-green-50 text-green-700"
                     : dietaryPref === "vegan"
-                      ? "bg-emerald-500/15 text-emerald-400"
+                      ? "bg-emerald-50 text-emerald-700"
                       : dietaryPref === "non-veg"
-                        ? "bg-orange-500/15 text-orange-400"
+                        ? "bg-orange-50 text-orange-700"
                         : "bg-muted text-muted-foreground"
                 }`}
               >

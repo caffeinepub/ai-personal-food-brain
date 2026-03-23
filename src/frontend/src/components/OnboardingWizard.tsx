@@ -328,7 +328,7 @@ const DIET_OPTIONS = [
     emoji: "\uD83E\uDD66",
     label: "Vegan",
     desc: "No animal products at all",
-    activeClass: "border-emerald-500 bg-emerald-500/15 text-emerald-400",
+    activeClass: "border-emerald-400 bg-emerald-50 text-emerald-700",
   },
   {
     id: "any",
@@ -366,7 +366,7 @@ const MEAL_TIMES = [
     emoji: "\uD83E\uDEB6",
     label: "Evening Snacks",
     desc: "Tea-time bites",
-    activeClass: "border-amber-500 bg-amber-500/15 text-amber-400",
+    activeClass: "border-amber-400 bg-amber-50 text-amber-700",
   },
 ];
 
@@ -464,7 +464,7 @@ function MiniDishCard({
     e.stopPropagation();
     clickCountRef.current += 1;
     if (clickCountRef.current >= nextThresholdRef.current) {
-      scoreAdjust(dish.id, +5);
+      scoreAdjust(dish.id, +1);
       nextThresholdRef.current =
         clickCountRef.current + Math.floor(Math.random() * 3) + 4;
     }
@@ -475,7 +475,7 @@ function MiniDishCard({
     e.stopPropagation();
     clickCountRef.current += 1;
     if (clickCountRef.current >= nextThresholdRef.current) {
-      scoreAdjust(dish.id, -10);
+      scoreAdjust(dish.id, -1);
       nextThresholdRef.current =
         clickCountRef.current + Math.floor(Math.random() * 3) + 4;
     }
@@ -617,8 +617,8 @@ function MiniDishCard({
               data-ocid="onboarding.button"
               className={`flex-1 h-7 text-[10px] gap-1 border transition-all ${
                 loved
-                  ? "text-rose-300 bg-rose-500/15 border-rose-500/40"
-                  : "text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border-rose-500/20"
+                  ? "text-rose-700 bg-rose-50 border-rose-300"
+                  : "text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
               }`}
             >
               <Heart className="w-2.5 h-2.5" />

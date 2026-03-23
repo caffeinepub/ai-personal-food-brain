@@ -20,6 +20,16 @@ const CUISINES = [
 const DIETS = ["All", "veg", "non-veg", "vegan"];
 const SPICE_LEVELS = ["All", "Mild", "Medium", "Hot"];
 
+// Normalize backend dietType values to filter keys
+function normalizeDietType(dietType: string): string {
+  const d = dietType.toLowerCase().trim();
+  if (d === "vegetarian" || d === "veg") return "veg";
+  if (d === "non-vegetarian" || d === "non-veg" || d === "nonvegetarian")
+    return "non-veg";
+  if (d === "vegan") return "vegan";
+  return d;
+}
+
 function getDefaultDiet(): string {
   const pref = localStorage.getItem("dietaryPref") ?? "any";
   if (pref === "veg") return "veg";
@@ -51,8 +61,8 @@ export default function ExploreTab() {
           cuisine.toLowerCase().replace(/[_\s]+/g, " ")
       )
         return false;
-      // Case-insensitive diet match
-      if (diet !== "All" && d.dietType.toLowerCase() !== diet.toLowerCase())
+      // Normalize diet type before comparing
+      if (diet !== "All" && normalizeDietType(d.dietType) !== diet)
         return false;
       if (spiceLevel !== "All") {
         if (spiceLevel === "Mild" && d.spice > 0.33) return false;

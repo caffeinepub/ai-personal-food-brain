@@ -472,7 +472,7 @@ export default function TasteProfileTab() {
                   {orderHistory.recentPlatforms.map((p) => (
                     <span
                       key={p}
-                      className="text-xs font-bold px-2.5 py-0.5 rounded-full text-white"
+                      className="text-xs font-bold px-2.5 py-0.5 rounded-full text-primary-foreground"
                       style={{
                         background: p === "swiggy" ? "#FC8019" : "#E23744",
                       }}

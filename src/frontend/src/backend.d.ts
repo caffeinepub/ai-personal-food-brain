@@ -70,6 +70,7 @@ export enum UserRole {
 }
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    claimFirstAdmin(): Promise<boolean>;
     createOrUpdateProfile(username: string, spicePref: number, sweetPref: number, richPref: number): Promise<void>;
     getAllDishes(): Promise<Array<Dish>>;
     getAnalytics(): Promise<{

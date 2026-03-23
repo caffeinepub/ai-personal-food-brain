@@ -384,6 +384,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async claimFirstAdmin(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.claimFirstAdmin();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.claimFirstAdmin();
+            return result;
+        }
+    }
     async placeOrder(arg0: string, arg1: string, arg2: string): Promise<string> {
         if (this.processError) {
             try {

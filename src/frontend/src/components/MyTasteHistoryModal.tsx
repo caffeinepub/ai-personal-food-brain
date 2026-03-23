@@ -145,7 +145,7 @@ export default function MyTasteHistoryModal({
                   {history.recentPlatforms.map((p) => (
                     <span
                       key={p}
-                      className="text-xs font-bold px-3 py-1 rounded-full text-white"
+                      className="text-xs font-bold px-3 py-1 rounded-full text-primary-foreground"
                       style={{
                         background: p === "swiggy" ? "#FC8019" : "#E23744",
                       }}

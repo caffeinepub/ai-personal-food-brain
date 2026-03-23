@@ -30,8 +30,11 @@ import {
 import { Principal } from "@icp-sdk/core/principal";
 import {
   AlertTriangle,
+  CheckCircle2,
   ChefHat,
+  Fingerprint,
   Loader2,
+  Lock,
   Package,
   Pencil,
   Plus,
@@ -44,11 +47,30 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { AppStats, Dish, UserSummary } from "../backend.d";
 import { useActor } from "../hooks/useActor";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
 const CUISINES = ["north indian", "chinese", "mexican", "italian", "japanese"];
 const DIET_TYPES = ["vegetarian", "non-vegetarian", "vegan"];
 const PLATFORMS = ["both", "swiggy", "zomato"];
 const ROLES = ["admin", "user", "guest"];
+
+// Restaurant list matching the seeded backend data
+const RESTAURANTS: { id: string; name: string; cuisine: string }[] = [
+  { id: "1", name: "Tandoori Treats", cuisine: "north indian" },
+  { id: "2", name: "Masala Magic", cuisine: "north indian" },
+  { id: "3", name: "Wok Express", cuisine: "chinese" },
+  { id: "4", name: "Dragon's Breath", cuisine: "chinese" },
+  { id: "5", name: "Mexicano", cuisine: "mexican" },
+  { id: "6", name: "Burrito Factory", cuisine: "mexican" },
+  { id: "7", name: "Pizza Palace", cuisine: "italian" },
+  { id: "8", name: "Pasta House", cuisine: "italian" },
+  { id: "9", name: "Sushi Central", cuisine: "japanese" },
+  { id: "10", name: "Ramen House", cuisine: "japanese" },
+];
+
+function getRestaurantName(id: string): string {
+  return RESTAURANTS.find((r) => r.id === id)?.name ?? id;
+}
 
 interface DishFormState {
   name: string;
@@ -58,7 +80,6 @@ interface DishFormState {
   dietType: string;
   cuisine: string;
   price: number;
-  popularity: number;
   restaurantId: string;
   platform: string;
 }
@@ -71,8 +92,7 @@ const defaultForm: DishFormState = {
   dietType: "vegetarian",
   cuisine: "north indian",
   price: 200,
-  popularity: 0.7,
-  restaurantId: "rest-001",
+  restaurantId: "1",
   platform: "both",
 };
 
@@ -116,14 +136,23 @@ function StatCard({
   );
 }
 
-export default function AdminTab() {
-  const { actor, isFetching } = useActor();
+interface AdminTabProps {
+  isAdmin: boolean;
+  onAdminClaimed: () => void;
+}
+
+export default function AdminTab({ isAdmin, onAdminClaimed }: AdminTabProps) {
+  const { actor } = useActor();
+  const { identity, login, isLoggingIn } = useInternetIdentity();
+  const isAnonymous = !identity || identity.getPrincipal().isAnonymous();
+
   const [stats, setStats] = useState<AppStats | null>(null);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [users, setUsers] = useState<UserSummary[]>([]);
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [dishesLoading, setDishesLoading] = useState(true);
-  const [usersLoading, setUsersLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [dishesLoading, setDishesLoading] = useState(false);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [claimingAdmin, setClaimingAdmin] = useState(false);
 
   // Dish dialog state
   const [dishDialogOpen, setDishDialogOpen] = useState(false);
@@ -140,32 +169,64 @@ export default function AdminTab() {
   const [roleChanging, setRoleChanging] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    if (!actor || isFetching) return;
+    if (!actor || !isAdmin) return;
     const a = actor as any;
 
     setStatsLoading(true);
     setDishesLoading(true);
     setUsersLoading(true);
 
-    const [statsRes, dishesRes, usersRes] = await Promise.allSettled([
-      a.adminGetAppStats().catch(() => null),
-      a.getAllDishes().catch(() => []),
-      a.adminGetAllUsers().catch(() => []),
-    ]);
+    try {
+      const [statsRes, dishesRes, usersRes] = await Promise.allSettled([
+        a.adminGetAppStats(),
+        a.getAllDishes(),
+        a.adminGetAllUsers(),
+      ]);
 
-    setStats(statsRes.status === "fulfilled" ? statsRes.value : null);
-    setStatsLoading(false);
-
-    setDishes(dishesRes.status === "fulfilled" ? (dishesRes.value ?? []) : []);
-    setDishesLoading(false);
-
-    setUsers(usersRes.status === "fulfilled" ? (usersRes.value ?? []) : []);
-    setUsersLoading(false);
-  }, [actor, isFetching]);
+      setStats(statsRes.status === "fulfilled" ? statsRes.value : null);
+      setDishes(
+        dishesRes.status === "fulfilled" ? (dishesRes.value ?? []) : [],
+      );
+      setUsers(usersRes.status === "fulfilled" ? (usersRes.value ?? []) : []);
+    } catch {
+      // silently fail
+    } finally {
+      setStatsLoading(false);
+      setDishesLoading(false);
+      setUsersLoading(false);
+    }
+  }, [actor, isAdmin]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (actor && isAdmin) {
+      fetchData();
+    }
+  }, [fetchData, actor, isAdmin]);
+
+  const handleClaimAdmin = async () => {
+    if (!actor) return;
+    if (isAnonymous) {
+      toast.error("Please sign in with Internet Identity first.");
+      return;
+    }
+    setClaimingAdmin(true);
+    try {
+      const a = actor as any;
+      const success = await a.claimFirstAdmin();
+      if (success) {
+        toast.success("Admin access granted! Welcome to the control panel.");
+        onAdminClaimed();
+      } else {
+        toast.error(
+          "Admin slot already claimed. Contact an existing admin to grant you access.",
+        );
+      }
+    } catch {
+      toast.error("Failed to claim admin access. Please try again.");
+    } finally {
+      setClaimingAdmin(false);
+    }
+  };
 
   const openAddDish = () => {
     setEditingDish(null);
@@ -183,7 +244,6 @@ export default function AdminTab() {
       dietType: dish.dietType,
       cuisine: dish.cuisine,
       price: dish.price,
-      popularity: dish.popularity,
       restaurantId: dish.restaurantId,
       platform: dish.platform,
     });
@@ -199,6 +259,7 @@ export default function AdminTab() {
     }
     setFormSaving(true);
     try {
+      const defaultPopularity = 0.75;
       if (editingDish) {
         await a.adminUpdateDish(
           editingDish.id,
@@ -209,7 +270,7 @@ export default function AdminTab() {
           form.dietType,
           form.cuisine,
           form.price,
-          form.popularity,
+          defaultPopularity,
           form.restaurantId,
           form.platform,
         );
@@ -223,7 +284,7 @@ export default function AdminTab() {
           form.dietType,
           form.cuisine,
           form.price,
-          form.popularity,
+          defaultPopularity,
           form.restaurantId,
           form.platform,
         );
@@ -281,22 +342,130 @@ export default function AdminTab() {
   };
 
   const dietBadgeColor: Record<string, string> = {
-    vegetarian: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-    vegan: "bg-green-500/15 text-green-400 border-green-500/30",
-    "non-vegetarian": "bg-rose-500/15 text-rose-400 border-rose-500/30",
+    vegetarian: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    vegan: "bg-green-50 text-green-700 border-green-200",
+    "non-vegetarian": "bg-rose-50 text-rose-700 border-rose-200",
   };
 
   const platformBadgeColor: Record<string, string> = {
-    both: "bg-violet-500/15 text-violet-400 border-violet-500/30",
-    swiggy: "bg-orange-500/15 text-orange-400 border-orange-500/30",
-    zomato: "bg-red-500/15 text-red-400 border-red-500/30",
+    both: "bg-violet-50 text-violet-700 border-violet-200",
+    swiggy: "bg-orange-50 text-orange-700 border-orange-200",
+    zomato: "bg-red-50 text-red-700 border-red-200",
   };
 
   const roleBadgeColor: Record<string, string> = {
-    admin: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-    user: "bg-blue-500/15 text-blue-400 border-blue-500/30",
-    guest: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
+    admin: "bg-amber-50 text-amber-700 border-amber-200",
+    user: "bg-blue-50 text-blue-700 border-blue-200",
+    guest: "bg-zinc-100 text-zinc-600 border-zinc-200",
   };
+
+  // Non-admin locked view
+  if (!isAdmin) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-16 flex flex-col items-center justify-center gap-6">
+        <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center">
+          <Lock className="w-8 h-8 text-amber-600" />
+        </div>
+        <div className="text-center max-w-sm">
+          <h2 className="font-display text-xl font-bold text-foreground mb-2">
+            Admin Access Required
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            You need admin privileges to access the control panel. Follow the
+            two steps below to claim the admin slot.
+          </p>
+        </div>
+
+        {/* Two-step claim flow */}
+        <div className="w-full max-w-sm space-y-4">
+          {/* Step 1: Sign in */}
+          <div className="glass-card rounded-2xl p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              {isAnonymous ? (
+                <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  1
+                </span>
+              ) : (
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              )}
+              <p className="text-sm font-semibold text-foreground">
+                {isAnonymous
+                  ? "Step 1: Sign in with Internet Identity"
+                  : "Signed in — ready to claim"}
+              </p>
+            </div>
+
+            {isAnonymous ? (
+              <>
+                <Button
+                  data-ocid="admin.sign_in_button"
+                  onClick={login}
+                  disabled={isLoggingIn}
+                  className="w-full bg-sky-100 text-sky-700 hover:bg-sky-200 border border-sky-200 gap-2"
+                >
+                  {isLoggingIn ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      <Fingerprint className="w-4 h-4" />
+                      Sign in with Internet Identity
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  After signing in, click Make Me Admin to claim the admin slot.
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-emerald-600">
+                ✓ You are signed in. Proceed to step 2.
+              </p>
+            )}
+          </div>
+
+          {/* Step 2: Claim admin */}
+          <div
+            className={`glass-card rounded-2xl p-5 space-y-3 transition-opacity ${
+              isAnonymous ? "opacity-40 pointer-events-none" : ""
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                2
+              </span>
+              <p className="text-sm font-semibold text-foreground">
+                Step 2: Claim Admin Access
+              </p>
+            </div>
+            <Button
+              data-ocid="admin.claim_admin_button"
+              onClick={handleClaimAdmin}
+              disabled={claimingAdmin || isAnonymous}
+              className="w-full bg-amber-100 text-amber-700 hover:bg-amber-500/30 border border-amber-500/30 gap-2"
+            >
+              {claimingAdmin ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Claiming...
+                </>
+              ) : (
+                <>
+                  <ChefHat className="w-4 h-4" />
+                  Make Me Admin
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              This button only works if no admin has been assigned yet.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-10">
@@ -306,8 +475,8 @@ export default function AdminTab() {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-3"
       >
-        <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-          <ChefHat className="w-5 h-5 text-amber-400" />
+        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+          <ChefHat className="w-5 h-5 text-amber-600" />
         </div>
         <div>
           <h1 className="font-display text-xl font-bold text-foreground">
@@ -326,31 +495,31 @@ export default function AdminTab() {
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
-            icon={<Users className="w-5 h-5 text-sky-400" />}
+            icon={<Users className="w-5 h-5 text-sky-600" />}
             label="Total Users"
             value={stats ? stats.totalUsers.toString() : "0"}
-            color="bg-sky-500/15"
+            color="bg-sky-50"
             loading={statsLoading}
           />
           <StatCard
-            icon={<Package className="w-5 h-5 text-violet-400" />}
+            icon={<Package className="w-5 h-5 text-violet-600" />}
             label="Interactions"
             value={stats ? stats.totalInteractions.toString() : "0"}
-            color="bg-violet-500/15"
+            color="bg-violet-50"
             loading={statsLoading}
           />
           <StatCard
-            icon={<ShoppingCart className="w-5 h-5 text-amber-400" />}
+            icon={<ShoppingCart className="w-5 h-5 text-amber-600" />}
             label="Total Orders"
             value={stats ? stats.totalOrders.toString() : "0"}
-            color="bg-amber-500/15"
+            color="bg-amber-50"
             loading={statsLoading}
           />
           <StatCard
-            icon={<ChefHat className="w-5 h-5 text-emerald-400" />}
+            icon={<ChefHat className="w-5 h-5 text-emerald-600" />}
             label="Total Dishes"
             value={stats ? stats.totalDishes.toString() : "0"}
-            color="bg-emerald-500/15"
+            color="bg-emerald-50"
             loading={statsLoading}
           />
         </div>
@@ -413,6 +582,9 @@ export default function AdminTab() {
                     Spice
                   </TableHead>
                   <TableHead className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
+                    Restaurant
+                  </TableHead>
+                  <TableHead className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
                     Platform
                   </TableHead>
                   <TableHead className="text-muted-foreground text-xs font-semibold uppercase tracking-wide text-right">
@@ -454,6 +626,9 @@ export default function AdminTab() {
                           {Math.round(dish.spice * 100)}%
                         </span>
                       </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {getRestaurantName(dish.restaurantId)}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -725,18 +900,34 @@ export default function AdminTab() {
               </div>
             </div>
 
+            {/* Restaurant dropdown */}
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Restaurant ID
+                Restaurant
               </Label>
-              <Input
+              <Select
                 value={form.restaurantId}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, restaurantId: e.target.value }))
+                onValueChange={(v) =>
+                  setForm((p) => ({ ...p, restaurantId: v }))
                 }
-                placeholder="rest-001"
-                className="bg-background/40 border-border/40"
-              />
+              >
+                <SelectTrigger
+                  data-ocid="admin.dish_form.select"
+                  className="bg-background/40 border-border/40 text-sm"
+                >
+                  <SelectValue placeholder="Select a restaurant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {RESTAURANTS.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                      <span className="ml-1 text-xs text-muted-foreground capitalize">
+                        ({r.cuisine})
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Sliders */}
@@ -757,13 +948,7 @@ export default function AdminTab() {
                 label="Richness"
                 value={form.richness}
                 onChange={(v) => setForm((p) => ({ ...p, richness: v }))}
-                color="text-amber-400"
-              />
-              <SliderField
-                label="Popularity"
-                value={form.popularity}
-                onChange={(v) => setForm((p) => ({ ...p, popularity: v }))}
-                color="text-sky-400"
+                color="text-amber-600"
               />
             </div>
           </div>

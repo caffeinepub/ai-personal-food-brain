@@ -25,7 +25,7 @@ const MODEL_LAYERS = [
     title: "Content-Based Filtering",
     subtitle: "Taste Vector Cosine Similarity",
     desc: "Matches your spice/sweet/richness profile to dish taste vectors using cosine similarity across 10 flavor dimensions.",
-    color: "text-orange-400",
+    color: "text-orange-600",
     bg: "bg-orange-500/10 border-orange-500/20",
     weight: "40%",
   },
@@ -34,7 +34,7 @@ const MODEL_LAYERS = [
     title: "Collaborative Filtering",
     subtitle: "Similar User Patterns",
     desc: "Identifies users with similar taste vectors using matrix factorization. Learns from 10M+ user interactions.",
-    color: "text-blue-400",
+    color: "text-blue-600",
     bg: "bg-blue-500/10 border-blue-500/20",
     weight: "30%",
   },
@@ -43,7 +43,7 @@ const MODEL_LAYERS = [
     title: "Context-Aware Boost",
     subtitle: "Time / Weather Intelligence",
     desc: "Boosts comfort food in cold/rainy weather, lighter dishes in morning, trending local items on weekends.",
-    color: "text-teal-400",
+    color: "text-teal-600",
     bg: "bg-teal-500/10 border-teal-500/20",
     weight: "20%",
   },
@@ -52,7 +52,7 @@ const MODEL_LAYERS = [
     title: "Reinforcement Learning",
     subtitle: "Feedback Loop Update",
     desc: "Updates Q-values for each dish-user pair on every interaction. Love → +0.3, Order → +0.2, Dislike → -0.4.",
-    color: "text-purple-400",
+    color: "text-purple-600",
     bg: "bg-purple-500/10 border-purple-500/20",
     weight: "10%",
   },
@@ -258,7 +258,7 @@ export default function AnalyticsTab() {
                   </p>
                 </div>
                 <span
-                  className={`text-xs font-bold px-2 py-0.5 rounded-full bg-background/40 ${layer.color}`}
+                  className={`text-xs font-bold px-2 py-0.5 rounded-full bg-card/60 ${layer.color}`}
                 >
                   {layer.weight}
                 </span>
@@ -303,14 +303,14 @@ export default function AnalyticsTab() {
                     y1="6"
                     x2="20"
                     y2="6"
-                    stroke="oklch(0.75 0.18 55 / 0.5)"
+                    stroke="oklch(0.68 0.22 50 / 0.5)"
                     strokeWidth="2"
                     className="flow-line"
                   />
                   <polyline
                     points="14,2 20,6 14,10"
                     fill="none"
-                    stroke="oklch(0.75 0.18 55 / 0.7)"
+                    stroke="oklch(0.68 0.22 50 / 0.7)"
                     strokeWidth="1.5"
                   />
                 </svg>
@@ -331,23 +331,23 @@ export default function AnalyticsTab() {
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={vectorEvolution}>
               <CartesianGrid
-                stroke="oklch(0.22 0.012 285)"
+                stroke="oklch(0.90 0.012 75)"
                 strokeDasharray="3 3"
               />
               <XAxis
                 dataKey="time"
-                tick={{ fill: "oklch(0.55 0.015 285)", fontSize: 10 }}
+                tick={{ fill: "oklch(0.52 0.025 60)", fontSize: 10 }}
               />
               <YAxis
                 domain={[0, 1]}
-                tick={{ fill: "oklch(0.55 0.015 285)", fontSize: 10 }}
+                tick={{ fill: "oklch(0.52 0.025 60)", fontSize: 10 }}
               />
               <Tooltip
                 contentStyle={{
-                  background: "oklch(0.15 0.008 285)",
-                  border: "1px solid oklch(0.25 0.015 285)",
+                  background: "oklch(0.995 0.003 80)",
+                  border: "1px solid oklch(0.88 0.012 75)",
                   borderRadius: 8,
-                  color: "oklch(0.96 0.008 60)",
+                  color: "oklch(0.18 0.02 60)",
                 }}
               />
               <Line
@@ -390,24 +390,24 @@ export default function AnalyticsTab() {
               data={radarEvolutionData}
               margin={{ top: 10, right: 20, bottom: 10, left: 20 }}
             >
-              <PolarGrid stroke="oklch(0.30 0.015 285)" />
+              <PolarGrid stroke="oklch(0.88 0.012 75)" />
               <PolarAngleAxis
                 dataKey="subject"
-                tick={{ fill: "oklch(0.65 0.015 285)", fontSize: 10 }}
+                tick={{ fill: "oklch(0.52 0.025 60)", fontSize: 10 }}
               />
               <Radar
                 name="Before"
                 dataKey="before"
-                stroke="oklch(0.55 0.015 285)"
-                fill="oklch(0.55 0.015 285)"
+                stroke="oklch(0.65 0.04 260)"
+                fill="oklch(0.65 0.04 260)"
                 fillOpacity={0.2}
                 strokeWidth={1.5}
               />
               <Radar
                 name="After"
                 dataKey="after"
-                stroke="oklch(0.75 0.18 55)"
-                fill="oklch(0.75 0.18 55)"
+                stroke="oklch(0.68 0.22 50)"
+                fill="oklch(0.68 0.22 50)"
                 fillOpacity={0.3}
                 strokeWidth={2}
               />

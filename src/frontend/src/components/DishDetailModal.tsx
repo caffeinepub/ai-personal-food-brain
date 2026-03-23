@@ -5,7 +5,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -60,29 +59,29 @@ const cuisineHeroGradients: Record<string, string> = {
   "South Indian":
     "linear-gradient(135deg, oklch(0.25 0.09 75) 0%, oklch(0.18 0.07 60) 50%, oklch(0.14 0.04 80) 100%)",
   chinese:
-    "linear-gradient(135deg, oklch(0.22 0.09 20) 0%, oklch(0.16 0.07 15) 50%, oklch(0.12 0.04 25) 100%)",
+    "linear-gradient(135deg, oklch(0.90 0.08 50) 0%, oklch(0.94 0.06 60) 50%, oklch(0.88 0.10 40) 100%)",
   Chinese:
-    "linear-gradient(135deg, oklch(0.22 0.09 20) 0%, oklch(0.16 0.07 15) 50%, oklch(0.12 0.04 25) 100%)",
+    "linear-gradient(135deg, oklch(0.90 0.08 50) 0%, oklch(0.94 0.06 60) 50%, oklch(0.88 0.10 40) 100%)",
   italian:
-    "linear-gradient(135deg, oklch(0.22 0.08 145) 0%, oklch(0.16 0.06 130) 50%, oklch(0.12 0.04 150) 100%)",
+    "linear-gradient(135deg, oklch(0.90 0.08 145) 0%, oklch(0.94 0.06 130) 50%, oklch(0.88 0.07 150) 100%)",
   Italian:
-    "linear-gradient(135deg, oklch(0.22 0.08 145) 0%, oklch(0.16 0.06 130) 50%, oklch(0.12 0.04 150) 100%)",
+    "linear-gradient(135deg, oklch(0.90 0.08 145) 0%, oklch(0.94 0.06 130) 50%, oklch(0.88 0.07 150) 100%)",
   mexican:
     "linear-gradient(135deg, oklch(0.25 0.09 80) 0%, oklch(0.18 0.07 65) 50%, oklch(0.14 0.04 85) 100%)",
   Mexican:
     "linear-gradient(135deg, oklch(0.25 0.09 80) 0%, oklch(0.18 0.07 65) 50%, oklch(0.14 0.04 85) 100%)",
   japanese:
-    "linear-gradient(135deg, oklch(0.22 0.07 350) 0%, oklch(0.16 0.05 340) 50%, oklch(0.12 0.04 0) 100%)",
+    "linear-gradient(135deg, oklch(0.90 0.07 350) 0%, oklch(0.94 0.05 340) 50%, oklch(0.88 0.06 0) 100%)",
   Japanese:
-    "linear-gradient(135deg, oklch(0.22 0.07 350) 0%, oklch(0.16 0.05 340) 50%, oklch(0.12 0.04 0) 100%)",
-  thai: "linear-gradient(135deg, oklch(0.22 0.08 175) 0%, oklch(0.16 0.06 160) 50%, oklch(0.12 0.04 180) 100%)",
-  Thai: "linear-gradient(135deg, oklch(0.22 0.08 175) 0%, oklch(0.16 0.06 160) 50%, oklch(0.12 0.04 180) 100%)",
+    "linear-gradient(135deg, oklch(0.90 0.07 350) 0%, oklch(0.94 0.05 340) 50%, oklch(0.88 0.06 0) 100%)",
+  thai: "linear-gradient(135deg, oklch(0.90 0.08 175) 0%, oklch(0.94 0.06 160) 50%, oklch(0.88 0.07 180) 100%)",
+  Thai: "linear-gradient(135deg, oklch(0.90 0.08 175) 0%, oklch(0.94 0.06 160) 50%, oklch(0.88 0.07 180) 100%)",
   mediterranean:
-    "linear-gradient(135deg, oklch(0.22 0.07 230) 0%, oklch(0.16 0.06 215) 50%, oklch(0.12 0.04 240) 100%)",
+    "linear-gradient(135deg, oklch(0.90 0.07 230) 0%, oklch(0.94 0.06 215) 50%, oklch(0.88 0.06 240) 100%)",
   Mediterranean:
-    "linear-gradient(135deg, oklch(0.22 0.07 230) 0%, oklch(0.16 0.06 215) 50%, oklch(0.12 0.04 240) 100%)",
+    "linear-gradient(135deg, oklch(0.90 0.07 230) 0%, oklch(0.94 0.06 215) 50%, oklch(0.88 0.06 240) 100%)",
   continental:
-    "linear-gradient(135deg, oklch(0.22 0.07 230) 0%, oklch(0.16 0.06 215) 50%, oklch(0.12 0.04 240) 100%)",
+    "linear-gradient(135deg, oklch(0.90 0.07 230) 0%, oklch(0.94 0.06 215) 50%, oklch(0.88 0.06 240) 100%)",
 };
 
 const SIMILAR_DISH_POOL: Array<{
@@ -532,7 +531,7 @@ function SimilarDishCard({
         className="w-11 h-11 rounded-xl flex items-center justify-center text-xl"
         style={{
           background: isLoved
-            ? "oklch(0.22 0.07 10 / 0.7)"
+            ? "oklch(0.90 0.07 10 / 0.7)"
             : "oklch(0.18 0.04 55 / 0.7)",
           border: isLoved
             ? "1px solid oklch(0.60 0.18 10 / 0.35)"
@@ -740,7 +739,7 @@ function DishDetailContent({
     <div className="flex flex-col flex-1 min-h-0">
       {/* Hero image area */}
       <div
-        className="relative w-full overflow-hidden"
+        className="relative w-full flex-shrink-0 overflow-hidden"
         style={{ height: "180px", background: heroGradient }}
       >
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
@@ -832,7 +831,8 @@ function DishDetailContent({
         />
       </div>
 
-      <ScrollArea className="flex-1 min-h-0">
+      {/* Scrollable content */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="p-6">
           <DialogHeader className="mb-5">
             <div className="flex items-start gap-4">
@@ -979,7 +979,7 @@ function DishDetailContent({
               <ul className="space-y-2">
                 {reasons.map((r) => (
                   <li key={r} className="flex items-start gap-2 text-sm">
-                    <span className="text-emerald-400 mt-0.5 flex-shrink-0">
+                    <span className="text-emerald-600 mt-0.5 flex-shrink-0">
                       ✓
                     </span>
                     <span className="text-muted-foreground">{r}</span>
@@ -1016,9 +1016,11 @@ function DishDetailContent({
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
+
+      {/* Fixed footer */}
       <div
-        className="p-4 border-t"
+        className="flex-shrink-0 p-4 border-t"
         style={{
           borderColor: "oklch(1 0 0 / 0.08)",
           background: "oklch(0.12 0.02 260)",
@@ -1029,7 +1031,7 @@ function DishDetailContent({
             data-ocid="dish.primary_button"
             variant="ghost"
             onClick={handleLove}
-            className="h-11 gap-1.5 text-sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/25 hover:border-rose-500/50 rounded-xl"
+            className="h-11 gap-1.5 text-sm text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 hover:border-rose-300 rounded-xl"
           >
             <Heart className="w-4 h-4" />
             Love
@@ -1116,8 +1118,11 @@ export default function DishDetailModal({
     >
       <DialogContent
         data-ocid="dish.dialog"
-        className="max-w-lg p-0 border-border/60 overflow-hidden bg-card flex flex-col max-h-[85vh]"
-        style={{ boxShadow: "0 24px 64px oklch(0 0 0 / 0.5)" }}
+        className="max-w-lg p-0 border-border/60 overflow-hidden bg-card flex flex-col"
+        style={{
+          height: "min(85vh, 700px)",
+          boxShadow: "0 24px 64px oklch(0 0 0 / 0.5)",
+        }}
       >
         {/* Close button */}
         <button
@@ -1126,7 +1131,7 @@ export default function DishDetailModal({
           onClick={handleClose}
           className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center transition-colors backdrop-blur-sm"
         >
-          <X className="w-4 h-4 text-white/80" />
+          <X className="w-4 h-4 text-foreground/70" />
         </button>
 
         <AnimatePresence mode="wait">

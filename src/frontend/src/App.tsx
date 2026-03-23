@@ -93,11 +93,19 @@ export default function App() {
     setWelcomeView("onboarding");
   };
 
+  const refreshAdminStatus = () => {
+    if (!actor) return;
+    actor
+      .isCallerAdmin()
+      .then((result) => setIsAdmin(result))
+      .catch(() => setIsAdmin(false));
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen mesh-bg flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-3xl bg-primary/20 flex items-center justify-center glow-orange animate-pulse">
+          <div className="w-16 h-16 rounded-3xl bg-primary/15 flex items-center justify-center glow-orange animate-pulse">
             <Brain className="w-8 h-8 text-primary" />
           </div>
           <p className="text-muted-foreground text-sm">
@@ -107,7 +115,7 @@ export default function App() {
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="w-1.5 h-1.5 rounded-full bg-primary/60"
+                className="w-1.5 h-1.5 rounded-full bg-primary/50"
                 style={{
                   animation: `pulse 1s ${i * 0.2}s ease-in-out infinite`,
                 }}
@@ -134,6 +142,7 @@ export default function App() {
     );
   }
 
+  // Admin tab is ALWAYS visible; non-admins see a locked view inside AdminTab
   const navTabs = [
     {
       value: "feed",
@@ -160,21 +169,17 @@ export default function App() {
       icon: <BarChart3 className="w-3.5 h-3.5" />,
       label: "Analytics",
     },
-    ...(isAdmin
-      ? [
-          {
-            value: "admin",
-            icon: <Shield className="w-3.5 h-3.5" />,
-            label: "Admin",
-          },
-        ]
-      : []),
+    {
+      value: "admin",
+      icon: <Shield className="w-3.5 h-3.5" />,
+      label: "Admin",
+    },
   ];
 
   return (
     <div className="min-h-screen mesh-bg">
       <Toaster
-        theme="dark"
+        theme="light"
         toastOptions={{
           classNames: {
             toast: "glass-card border-border text-foreground",
@@ -182,12 +187,12 @@ export default function App() {
         }}
       />
 
-      <header className="sticky top-0 z-50 glass-card border-b border-border/60 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 bg-card/95 border-b border-border backdrop-blur-xl shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-primary/15 flex items-center justify-center">
               <Brain
-                className="w-4.5 h-4.5 text-primary"
+                className="text-primary"
                 style={{ width: 18, height: 18 }}
               />
             </div>
@@ -203,7 +208,7 @@ export default function App() {
 
           <div className="flex items-center gap-2">
             {isAdmin && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 font-semibold">
                 Admin
               </span>
             )}
@@ -219,7 +224,7 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto">
         <Tabs defaultValue="feed" className="w-full">
-          <div className="sticky top-14 z-40 glass-card border-b border-border/40 backdrop-blur-xl">
+          <div className="sticky top-14 z-40 bg-card/95 border-b border-border backdrop-blur-xl">
             <div className="max-w-7xl mx-auto px-4 md:px-6">
               <TabsList className="h-auto bg-transparent gap-0 p-0 rounded-none">
                 {navTabs.map((tab) => (
@@ -306,26 +311,27 @@ export default function App() {
                 <AnalyticsTab />
               </motion.div>
             </TabsContent>
-            {isAdmin && (
-              <TabsContent
-                value="admin"
-                forceMount
-                className="mt-0 data-[state=inactive]:hidden"
+            <TabsContent
+              value="admin"
+              forceMount
+              className="mt-0 data-[state=inactive]:hidden"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
               >
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <AdminTab />
-                </motion.div>
-              </TabsContent>
-            )}
+                <AdminTab
+                  isAdmin={isAdmin}
+                  onAdminClaimed={refreshAdminStatus}
+                />
+              </motion.div>
+            </TabsContent>
           </AnimatePresence>
         </Tabs>
       </main>
 
-      <footer className="border-t border-border/30 mt-8 py-6 px-4 text-center">
+      <footer className="border-t border-border mt-8 py-6 px-4 text-center bg-card/50">
         <p className="text-xs text-muted-foreground">
           © {new Date().getFullYear()}. Built with ❤️ using{" "}
           <a
