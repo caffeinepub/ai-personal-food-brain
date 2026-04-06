@@ -1,21 +1,20 @@
 @font-face {
-  font-family: 'Fraunces';
-  src: url('/assets/fonts/Fraunces.woff2') format('woff2');
+  font-family: "Fraunces";
+  src: url("/assets/fonts/Fraunces.woff2") format("woff2");
   font-weight: 300 900;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Satoshi';
-  src: url('/assets/fonts/Satoshi.woff2') format('woff2');
+  font-family: "Satoshi";
+  src: url("/assets/fonts/Satoshi.woff2") format("woff2");
   font-weight: 300 700;
   font-display: swap;
 }
 
-
 @font-face {
-  font-family: 'Playfair Display';
-  src: url('/assets/fonts/PlayfairDisplay.woff2') format('woff2');
+  font-family: "Playfair Display";
+  src: url("/assets/fonts/PlayfairDisplay.woff2") format("woff2");
   font-weight: 400 800;
   font-display: swap;
 }
@@ -35,19 +34,19 @@
     --primary-foreground: 0.99 0.005 80;
     --secondary: 0.94 0.012 70;
     --secondary-foreground: 0.25 0.02 60;
-    --muted: 0.94 0.010 75;
+    --muted: 0.94 0.01 75;
     --muted-foreground: 0.52 0.025 60;
     --accent: 0.92 0.025 60;
-    --accent-foreground: 0.20 0.02 60;
+    --accent-foreground: 0.2 0.02 60;
     --destructive: 0.55 0.22 25;
     --destructive-foreground: 0.99 0.005 80;
-    --border: 0.90 0.012 75;
-    --input: 0.92 0.010 75;
+    --border: 0.9 0.012 75;
+    --input: 0.92 0.01 75;
     --ring: 0.68 0.22 50;
     --radius: 0.75rem;
     --chart-1: 0.68 0.22 50;
     --chart-2: 0.62 0.18 30;
-    --chart-3: 0.60 0.16 170;
+    --chart-3: 0.6 0.16 170;
     --chart-4: 0.55 0.14 290;
     --chart-5: 0.65 0.15 120;
     --sidebar: 0.97 0.008 75;
@@ -78,41 +77,51 @@
 
 @layer utilities {
   .font-display {
-    font-family: 'Fraunces', serif;
+    font-family: "Fraunces", serif;
   }
   .font-body {
-    font-family: 'Satoshi', sans-serif;
+    font-family: "Satoshi", sans-serif;
   }
 
   .font-playfair {
-    font-family: 'Playfair Display', serif;
+    font-family: "Playfair Display", serif;
   }
 
   .glass-card {
     background: oklch(0.995 0.003 80 / 0.92);
     backdrop-filter: blur(12px);
     border: 1px solid oklch(0.88 0.012 75 / 0.8);
-    box-shadow: 0 2px 16px oklch(0.18 0.02 60 / 0.06), 0 1px 3px oklch(0.18 0.02 60 / 0.04);
+    box-shadow: 0 2px 16px oklch(0.18 0.02 60 / 0.06), 0 1px 3px
+      oklch(0.18 0.02 60 / 0.04);
   }
 
   .glow-orange {
-    box-shadow: 0 0 20px oklch(0.68 0.22 50 / 0.25), 0 0 60px oklch(0.68 0.22 50 / 0.08);
+    box-shadow: 0 0 20px oklch(0.68 0.22 50 / 0.25), 0 0 60px
+      oklch(0.68 0.22 50 / 0.08);
   }
 
   .glow-coral {
-    box-shadow: 0 0 20px oklch(0.62 0.18 30 / 0.25), 0 0 60px oklch(0.62 0.18 30 / 0.08);
+    box-shadow: 0 0 20px oklch(0.62 0.18 30 / 0.25), 0 0 60px
+      oklch(0.62 0.18 30 / 0.08);
   }
 
   .match-badge {
     background: conic-gradient(oklch(0.68 0.22 50) 0%, oklch(0.62 0.18 30) 100%);
-    box-shadow: 0 0 24px oklch(0.68 0.22 50 / 0.35), 0 2px 8px oklch(0.18 0.02 60 / 0.15);
+    box-shadow: 0 0 24px oklch(0.68 0.22 50 / 0.35), 0 2px 8px
+      oklch(0.18 0.02 60 / 0.15);
   }
 
   .mesh-bg {
-    background:
-      radial-gradient(ellipse at 10% 80%, oklch(0.68 0.22 50 / 0.06) 0%, transparent 50%),
-      radial-gradient(ellipse at 90% 20%, oklch(0.72 0.18 70 / 0.05) 0%, transparent 50%),
-      oklch(0.97 0.008 75);
+    background: radial-gradient(
+        ellipse at 10% 80%,
+        oklch(0.68 0.22 50 / 0.06) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        ellipse at 90% 20%,
+        oklch(0.72 0.18 70 / 0.05) 0%,
+        transparent 50%
+      ), oklch(0.97 0.008 75);
   }
 
   .tab-active {
@@ -122,14 +131,23 @@
   }
 
   .skeleton-pulse {
-    background: linear-gradient(90deg, oklch(0.92 0.010 75) 25%, oklch(0.88 0.015 70) 50%, oklch(0.92 0.010 75) 75%);
+    background: linear-gradient(
+      90deg,
+      oklch(0.92 0.01 75) 25%,
+      oklch(0.88 0.015 70) 50%,
+      oklch(0.92 0.01 75) 75%
+    );
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.5s infinite;
   }
 
   @keyframes skeleton-shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
   }
 
   .spice-dot {
@@ -140,8 +158,14 @@
   }
 
   @keyframes float-up {
-    0% { opacity: 0; transform: translateY(10px); }
-    100% { opacity: 1; transform: translateY(0); }
+    0% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .animate-float-up {
@@ -149,8 +173,12 @@
   }
 
   @keyframes ring-fill {
-    from { stroke-dashoffset: 251; }
-    to { stroke-dashoffset: var(--dash-offset); }
+    from {
+      stroke-dashoffset: 251;
+    }
+    to {
+      stroke-dashoffset: var(--dash-offset);
+    }
   }
 
   .ring-animate {
@@ -158,8 +186,14 @@
   }
 
   @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px oklch(0.68 0.22 50 / 0.3); }
-    50% { box-shadow: 0 0 35px oklch(0.68 0.22 50 / 0.55), 0 0 60px oklch(0.68 0.22 50 / 0.15); }
+    0%,
+    100% {
+      box-shadow: 0 0 20px oklch(0.68 0.22 50 / 0.3);
+    }
+    50% {
+      box-shadow: 0 0 35px oklch(0.68 0.22 50 / 0.55), 0 0 60px
+        oklch(0.68 0.22 50 / 0.15);
+    }
   }
 
   .animate-pulse-glow {
@@ -167,7 +201,9 @@
   }
 
   @keyframes flow-dash {
-    to { stroke-dashoffset: -20; }
+    to {
+      stroke-dashoffset: -20;
+    }
   }
 
   .flow-line {

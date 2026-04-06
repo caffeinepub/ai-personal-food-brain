@@ -18,6 +18,7 @@ export default {
       fontFamily: {
         display: ['Fraunces', 'serif'],
         body: ['Satoshi', 'sans-serif'],
+        playfair: ['Playfair Display', 'serif'],
       },
       colors: {
         border: "oklch(var(--border))",

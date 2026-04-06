@@ -5,6 +5,7 @@ import {
   BarChart3,
   Brain,
   Compass,
+  LayoutDashboard,
   LayoutGrid,
   Shield,
   ShoppingBag,
@@ -21,6 +22,9 @@ import OnboardingWizard from "./components/OnboardingWizard";
 import OrdersTab from "./components/OrdersTab";
 import TasteProfileTab from "./components/TasteProfileTab";
 import UserAccountMenu from "./components/UserAccountMenu";
+import UserDashboard, {
+  MOCK_USER_DASHBOARD_DATA,
+} from "./components/UserDashboard";
 import WelcomeScreen from "./components/WelcomeScreen";
 import { useActor } from "./hooks/useActor";
 import { useUserProfile } from "./hooks/useQueries";
@@ -40,6 +44,7 @@ export default function App() {
   const [welcomeView, setWelcomeView] = useState<WelcomeView>("welcome");
   const [timedOut, setTimedOut] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [activeTab, setActiveTab] = useState("feed");
 
   const isLoading =
     !onboardingDone &&
@@ -145,6 +150,11 @@ export default function App() {
   // Admin tab is ALWAYS visible; non-admins see a locked view inside AdminTab
   const navTabs = [
     {
+      value: "dashboard",
+      icon: <LayoutDashboard className="w-3.5 h-3.5" />,
+      label: "Dashboard",
+    },
+    {
       value: "feed",
       icon: <LayoutGrid className="w-3.5 h-3.5" />,
       label: "Feed",
@@ -223,7 +233,7 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto">
-        <Tabs defaultValue="feed" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="sticky top-14 z-40 bg-card/95 border-b border-border backdrop-blur-xl">
             <div className="max-w-7xl mx-auto px-4 md:px-6">
               <TabsList className="h-auto bg-transparent gap-0 p-0 rounded-none">
@@ -246,6 +256,34 @@ export default function App() {
           </div>
 
           <AnimatePresence mode="wait">
+            <TabsContent
+              value="dashboard"
+              forceMount
+              className="mt-0 data-[state=inactive]:hidden"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <UserDashboard
+                  {...MOCK_USER_DASHBOARD_DATA}
+                  user={{
+                    ...MOCK_USER_DASHBOARD_DATA.user,
+                    name: profile?.name ?? MOCK_USER_DASHBOARD_DATA.user.name,
+                  }}
+                  onNavigateToFeed={(mood) => {
+                    setActiveTab("feed");
+                    console.log("Navigate to feed with mood:", mood);
+                  }}
+                  onNavigateToFullProfile={() => setActiveTab("profile")}
+                  onNavigateToOrders={() => setActiveTab("orders")}
+                  onEditProfile={() => {}}
+                  onMyPreferences={() => {}}
+                  onLogout={handleLogout}
+                />
+              </motion.div>
+            </TabsContent>
             <TabsContent
               value="feed"
               forceMount
